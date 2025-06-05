@@ -21,7 +21,7 @@ import {
   GET_ICD_API_CLIENT_TOKEN,
   SET_ALL_OPTIONSETS,
   GET_ALL_PROGRAMS,
-  GET_TRACKED_ENTITY_TYPE
+  GET_TRACKED_ENTITY_TYPE,
 } from "../actions/metadata/type";
 
 const initialState = {
@@ -35,20 +35,26 @@ const initialState = {
   certificateTemplate: {
     title: "Death Certificate",
     logo: null,
-    info: [{
-      label: "Date of Death",
-      enrollment: "incidentDate"
-    },{
-      label: "Reported Date",
-      enrollment: "enrollmentDate"
-    }],
-    footer:[{
-      label: "Institution Name",
-      enrollment: "orgUnitName"
-    },{
-      label: "Certificate Date",
-      enrollment: "enrollmentDate"
-    }]
+    info: [
+      {
+        label: "Date of Death",
+        enrollment: "incidentDate",
+      },
+      {
+        label: "Reported Date",
+        enrollment: "enrollmentDate",
+      },
+    ],
+    footer: [
+      {
+        label: "Institution Name",
+        enrollment: "orgUnitName",
+      },
+      {
+        label: "Certificate Date",
+        enrollment: "enrollmentDate",
+      },
+    ],
   },
   customCertificate: null,
   femaleCode: "",
@@ -58,7 +64,7 @@ const initialState = {
   optionSets: [],
   programs: [],
   trackedEntityAttributes: [],
-  trackedEntityType: null
+  trackedEntityType: null,
 };
 
 export default function (state = initialState, action) {
@@ -66,137 +72,137 @@ export default function (state = initialState, action) {
     case SET_PROGRAM_METADATA: {
       return {
         ...state,
-        programMetadata: action.payload.programMetadata
+        programMetadata: action.payload.programMetadata,
       };
     }
     case SET_SELECTED_ORGUNIT: {
       return {
         ...state,
-        selectedOrgUnit: action.payload.selectedOrgUnit
+        selectedOrgUnit: action.payload.selectedOrgUnit,
       };
     }
     case SET_ORGUNITS: {
       return {
         ...state,
-        orgUnits: action.payload.orgUnits
+        orgUnits: action.payload.orgUnits,
       };
     }
     case SET_ORGUNIT_GROUPS: {
       return {
         ...state,
-        orgUnitGroups: action.payload.orgUnitGroups
+        orgUnitGroups: action.payload.orgUnitGroups,
       };
     }
     case SET_ORGUNIT_LEVELS: {
       return {
         ...state,
-        orgUnitLevels: action.payload.orgUnitLevels
+        orgUnitLevels: action.payload.orgUnitLevels,
       };
     }
     case SET_TEAS: {
       return {
         ...state,
-        trackedEntityAttributes: action.payload.trackedEntityAttributes
+        trackedEntityAttributes: action.payload.trackedEntityAttributes,
       };
     }
     case SET_ALL_OPTIONSETS: {
       return {
         ...state,
-        optionSets: action.payload.optionSets
+        optionSets: action.payload.optionSets,
       };
     }
     case GET_ALL_PROGRAMS: {
       return {
         ...state,
-        programs: action.payload.programs
+        programs: action.payload.programs,
       };
     }
     case SET_TRACKER_DATA_ELEMENTS: {
       return {
         ...state,
-        dataElements: action.payload.dataElements
+        dataElements: action.payload.dataElements,
       };
     }
     case SET_USERS: {
       return {
         ...state,
-        users: action.payload.users
+        users: action.payload.users,
       };
     }
     case GET_ICD11_OPTIONS: {
       return {
         ...state,
-        icd11Options: action.payload.options
-      }
+        icd11Options: action.payload.options,
+      };
     }
     case GET_TRACKED_ENTITY_TYPES: {
       return {
         ...state,
-        trackedEntityTypes: action.payload.trackedEntityTypes
-      }
+        trackedEntityTypes: action.payload.trackedEntityTypes,
+      };
     }
     case GET_TRACKED_ENTITY_TYPE: {
       return {
         ...state,
-        trackedEntityType: action.payload.trackedEntityType
-      }
+        trackedEntityType: action.payload.trackedEntityType,
+      };
     }
     case SET_USER_GROUPS: {
       return {
         ...state,
-        userGroups: action.payload.userGroups
-      }
+        userGroups: action.payload.userGroups,
+      };
     }
     case SET_FORM_MAPPING: {
       return {
         ...state,
-        formMapping: action.payload.formMapping
-      }
+        formMapping: action.payload.formMapping,
+      };
     }
     case SET_FORM_MAPPING_TEAS: {
       return {
         ...state,
-        formMapping: { 
+        formMapping: {
           ...state.formMapping,
-          attributes: action.payload.teas
-        }
-      }
+          attributes: action.payload.teas,
+        },
+      };
     }
     case SET_CERTIFICATE_TEMPLATE: {
       return {
         ...state,
-        certificateTemplate: action.payload.certificateTemplate
-      }
+        certificateTemplate: action.payload.certificateTemplate,
+      };
     }
     case SET_CUSTOM_CERTIFICATE: {
       return {
         ...state,
-        customCertificate: action.payload.customCertificate
-      }
+        customCertificate: action.payload.customCertificate,
+      };
     }
     case SET_FEMALE_CODE: {
       return {
         ...state,
-        femaleCode: action.payload
-      }
+        femaleCode: action.payload,
+      };
     }
     case CHANGE_FULLNAMEOPTION: {
       return {
         ...state,
-        fullnameOption: action.payload
-      }
+        fullnameOption: action.payload,
+      };
     }
     case SET_UI_LOCALE: {
       return {
         ...state,
-        keyUiLocale: action.payload
-      }
+        keyUiLocale: action.payload,
+      };
     }
     case GET_ICD_API_CLIENT_TOKEN: {
       return {
         ...state,
-        icdApi_clientToken: action.payload
-      }
+        icdApi_clientToken: action.payload,
+      };
     }
     default:
       return state;
