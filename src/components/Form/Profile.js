@@ -365,6 +365,9 @@ const Profile = ({
         mandatory={true}
       />
 
+      {populateInputField(formMapping.attributes["notification_date"])}  
+
+
       {/*         
         SA Custom Changes - 01/06/2025
         Sort Order
@@ -372,8 +375,7 @@ const Profile = ({
       {populateInputField(formMapping.attributes["system_id"])}
       {populateInputField(formMapping.attributes["barcode_number"])}
       {populateInputField(formMapping.attributes["address"])}
-      {populateInputField(formMapping.attributes["sa_id_number"])}
-      {populateInputField(formMapping.attributes["passport_number"])}
+
 
       <InputField
         value={currentEnrollment.incidentDate || ""}
@@ -518,6 +520,10 @@ const Profile = ({
       {/* {attributes
         .slice(0, 3)
         .map((attribute) => populateInputField(attribute))} */}
+
+      {populateInputField(formMapping.attributes["identification_type"])}
+      {populateInputField(formMapping.attributes["sa_id_number"])}       
+      {populateInputField(formMapping.attributes["passport_number"])}
       {renderDOBGroup()}
 
       {populateInputField(formMapping.attributes["sex"])}
@@ -550,8 +556,6 @@ const Profile = ({
       {populateInputField(
         formMapping.attributes["facility_contact_person_role_rank"]
       )}
-
-      {populateInputField(formMapping.attributes["identification_type"])}
       {populateInputField(formMapping.attributes["type_of_fileno"])}
       {populateInputField(formMapping.attributes["HPRN_no"])}
       {populateInputField(formMapping.attributes["notification_date"])}

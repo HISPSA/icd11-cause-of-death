@@ -145,13 +145,13 @@ const ControlBar = ({
       <div className="button-container">
         <Button
           variant="contained"
-          disabled={
-            (userRoles.view && !userRoles.admin && !userRoles.data) ||
-            !selectedOrgUnit ||
-            !programMetadata.organisationUnits.find(
-              (ou) => ou.id === selectedOrgUnit.id
-            )
-          }
+          // disabled={
+          //   (userRoles.view && !userRoles.admin && !userRoles.data) ||
+          //   !selectedOrgUnit ||
+          //   !programMetadata.organisationUnits.find(
+          //     (ou) => ou.id === selectedOrgUnit.id
+          //   )
+          // }
           onClick={() => {
             if (isDirty) {
               setRouteText("form");

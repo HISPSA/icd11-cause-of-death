@@ -518,77 +518,42 @@ const Stage = ({
     const option = icd11Options.find(
       (item) => item.code === value.split(" (")[0]
     );
-    const time = value.split(" (")[1]?.replace(")", "");
-    const timeString = !time
-      ? "unknown"
-      : time[time.length - 1] === "Y"
-      ? `${time.substring(1, time.length - 1)} year${
-          parseInt(time.substring(1, time.length - 1)) === 1 ? "" : "s"
-        }`
-      : time[time.length - 1] === "W"
-      ? `${time.substring(1, time.length - 1)} week${
-          parseInt(time.substring(1, time.length - 1)) === 1 ? "" : "s"
-        }`
-      : time[time.length - 1] === "D"
-      ? `${time.substring(1, time.length - 1)} day${
-          parseInt(time.substring(1, time.length - 1)) === 1 ? "" : "s"
-        }`
-      : time[time.length - 1] === "H"
-      ? `${time.substring(2, time.length - 1)} hour${
-          parseInt(time.substring(2, time.length - 1)) === 1 ? "" : "s"
-        }`
-      : time[time.length - 1] === "S"
-      ? `${time.substring(2, time.length - 1)} second${
-          parseInt(time.substring(2, time.length - 1)) === 1 ? "" : "s"
-        }`
-      : time[time.length - 1] === "M"
-      ? time.substring(0, 2) === "PT"
-        ? `${time.substring(2, time.length - 1)} minute${
-            parseInt(time.substring(2, time.length - 1)) === 1 ? "" : "s"
-          }`
-        : `${time.substring(1, time.length - 1)} month${
-            parseInt(time.substring(1, time.length - 1)) === 1 ? "" : "s"
-          }`
-      : "unknown";
+
+    const displayText = `${value.split(" (")[0]} - ${option?.name}`;
 
     return (
-      <Tooltip
-        title={`${option?.name}\n${timeString}`}
-        overlayInnerStyle={{ whiteSpace: "pre-line" }}
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          background: "#f0f0f0",
+          padding: "4px 8px",
+          borderRadius: "4px",
+          margin: "2px",
+        }}
       >
-        <span
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            background: "#f0f0f0",
-            padding: "4px 8px",
-            borderRadius: "4px",
-            margin: "2px",
-          }}
-        >
-          {label}
-          {closable && (
-            <span
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onClose();
-              }}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              style={{
-                marginLeft: "8px",
-                cursor: "pointer",
-                color: "#999",
-              }}
-            >
-              ×
-            </span>
-          )}
-        </span>
-      </Tooltip>
+        {displayText}
+        {closable && (
+          <span
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClose();
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            style={{
+              marginLeft: "8px",
+              cursor: "pointer",
+              color: "#999",
+            }}
+          >
+            ×
+          </span>
+        )}
+      </span>
     );
   };
 
@@ -1436,25 +1401,24 @@ const Stage = ({
                 </tr>
                 <tr>
                   <td style={{ width: "90%" }}>{t("causeOfDeath")}</td>
-                  {/* <td>{t("timeFromOnsetToDeath")}</td> */}
                   <td>{t("underlying")}</td>
                 </tr>
                 <tr>
-                  {/* <td>{t("immediate")}</td>
-                        <td>A</td> */}
                   <td>
+                    <div style={{ fontWeight: "bold", textAlign: "left", marginBottom: "5px" }}>
+                      Immediate cause of death
+                    </div>
                     <div className="two-fields-container">
-                      {renderInputField(
-                        formMapping.dataElements["codA_other_name"],
-                        undefined,
-                        "A (Free Text)"
-                      )}
                       {renderCauseOfDeathsInputField(
                         formMapping.dataElements["codA"],
-                        // formMapping.dataElements["codA_name"],
                         formMapping.dataElements["codA_entityId"],
                         formMapping.dataElements["codA_underlying"],
                         formMapping.dataElements["codA_other_name"]
+                      )}
+                      {renderInputField(
+                        formMapping.dataElements["codA_other_name"],
+                        undefined,
+                        "A (Free text)"
                       )}
                       <div
                         style={{
@@ -1479,7 +1443,7 @@ const Stage = ({
                               setTimeToDeathModal(true);
                               setTimeToDeath({
                                 causeId: formMapping.dataElements["codA"],
-                                causeLabel: "Cause of Death A",
+                                causeLabel: "Immediate cause of death",
                                 timeInterval: currentEvent.dataValues[
                                   formMapping.dataElements["codA"]
                                 ]
@@ -1511,12 +1475,6 @@ const Stage = ({
                       </div>
                     </div>
                   </td>
-                  {/* <td>
-                          <div className="two-fields-container">
-                            {renderInputField(formMapping.dataElements["codA_time"])}
-                            {renderInputField(formMapping.dataElements["codA_periodType"])}
-                          </div>
-                        </td> */}
                   <td>
                     {renderInputField(
                       formMapping.dataElements["codA_underlying"],
@@ -1526,18 +1484,20 @@ const Stage = ({
                 </tr>
                 <tr>
                   <td>
+                    <div style={{ fontWeight: "bold", textAlign: "left", marginBottom: "5px" }}>
+                      Condition leading to immediate cause (Step 2)
+                    </div>
                     <div className="two-fields-container">
-                      {renderInputField(
-                        formMapping.dataElements["codB_other_name"],
-                        undefined,
-                        "B (Free Text)"
-                      )}
                       {renderCauseOfDeathsInputField(
                         formMapping.dataElements["codB"],
-                        // formMapping.dataElements["codB_name"],
                         formMapping.dataElements["codB_entityId"],
                         formMapping.dataElements["codB_underlying"],
                         formMapping.dataElements["codB_other_name"]
+                      )}
+                      {renderInputField(
+                        formMapping.dataElements["codB_other_name"],
+                        undefined,
+                        "B (Free text)"
                       )}
                       <div
                         style={{
@@ -1562,7 +1522,7 @@ const Stage = ({
                               setTimeToDeathModal(true);
                               setTimeToDeath({
                                 causeId: formMapping.dataElements["codB"],
-                                causeLabel: "Cause of Death B",
+                                causeLabel: "Condition leading to immediate cause",
                                 timeInterval: currentEvent.dataValues[
                                   formMapping.dataElements["codB"]
                                 ]
@@ -1594,12 +1554,6 @@ const Stage = ({
                       </div>
                     </div>
                   </td>
-                  {/* <td>
-                          <div className="two-fields-container">
-                            {renderInputField(formMapping.dataElements["codB_time"])}
-                            {renderInputField(formMapping.dataElements["codB_periodType"])}
-                          </div>
-                        </td> */}
                   <td>
                     {renderInputField(
                       formMapping.dataElements["codB_underlying"],
@@ -1608,22 +1562,21 @@ const Stage = ({
                   </td>
                 </tr>
                 <tr>
-                  {/* <td>{t("dueTo")}</td>
-                        <td>C</td> */}
                   <td>
+                    <div style={{ fontWeight: "bold", textAlign: "left", marginBottom: "5px" }}>
+                      Condition leading to previous cause (Step 3)
+                    </div>
                     <div className="two-fields-container">
-                      {renderInputField(
-                        formMapping.dataElements["codC_other_name"],
-                        undefined,
-                        "C (Free Text)"
-                      )}
-                      {/* {renderInputField(formMapping.dataElements["codC_other_name"])} */}
                       {renderCauseOfDeathsInputField(
                         formMapping.dataElements["codC"],
-                        // formMapping.dataElements["codC_name"],
                         formMapping.dataElements["codC_entityId"],
                         formMapping.dataElements["codC_underlying"],
                         formMapping.dataElements["codC_other_name"]
+                      )}
+                      {renderInputField(
+                        formMapping.dataElements["codC_other_name"],
+                        undefined,
+                        "C (Free text)"
                       )}
                       <div
                         style={{
@@ -1648,7 +1601,7 @@ const Stage = ({
                               setTimeToDeathModal(true);
                               setTimeToDeath({
                                 causeId: formMapping.dataElements["codC"],
-                                causeLabel: "Cause of Death C",
+                                causeLabel: "Condition leading to previous cause",
                                 timeInterval: currentEvent.dataValues[
                                   formMapping.dataElements["codC"]
                                 ]
@@ -1680,12 +1633,6 @@ const Stage = ({
                       </div>
                     </div>
                   </td>
-                  {/* <td>
-                          <div className="two-fields-container">
-                            {renderInputField(formMapping.dataElements["codC_time"])}
-                            {renderInputField(formMapping.dataElements["codC_periodType"])}
-                          </div>
-                        </td> */}
                   <td>
                     {renderInputField(
                       formMapping.dataElements["codC_underlying"],
@@ -1694,22 +1641,21 @@ const Stage = ({
                   </td>
                 </tr>
                 <tr>
-                  {/* <td>{t("dueTo")}</td>
-                        <td>D</td> */}
                   <td>
+                    <div style={{ fontWeight: "bold", textAlign: "left", marginBottom: "5px" }}>
+                      Underlying cause of death
+                    </div>
                     <div className="two-fields-container">
-                      {renderInputField(
-                        formMapping.dataElements["codD_other_name"],
-                        undefined,
-                        "D (Free Text)"
-                      )}
-                      {/* {renderInputField(formMapping.dataElements["codD_other_name"])} */}
                       {renderCauseOfDeathsInputField(
                         formMapping.dataElements["codD"],
-                        // formMapping.dataElements["codD_name"],
                         formMapping.dataElements["codD_entityId"],
                         formMapping.dataElements["codD_underlying"],
                         formMapping.dataElements["codD_other_name"]
+                      )}
+                      {renderInputField(
+                        formMapping.dataElements["codD_other_name"],
+                        undefined,
+                        "D (Free text)"
                       )}
                       <div
                         style={{
@@ -1734,7 +1680,7 @@ const Stage = ({
                               setTimeToDeathModal(true);
                               setTimeToDeath({
                                 causeId: formMapping.dataElements["codD"],
-                                causeLabel: "Cause of Death D",
+                                causeLabel: "Underlying cause of death",
                                 timeInterval: currentEvent.dataValues[
                                   formMapping.dataElements["codD"]
                                 ]
@@ -1766,12 +1712,6 @@ const Stage = ({
                       </div>
                     </div>
                   </td>
-                  {/* <td>
-                          <div className="two-fields-container">
-                            {renderInputField(formMapping.dataElements["codD_time"])}
-                            {renderInputField(formMapping.dataElements["codD_periodType"])}
-                          </div>
-                        </td> */}
                   <td>
                     {renderInputField(
                       formMapping.dataElements["codD_underlying"],
@@ -1779,110 +1719,6 @@ const Stage = ({
                     )}
                   </td>
                 </tr>
-                <tr>
-                  {/* <td>{t("dueTo")}</td>
-                        <td>D</td> */}
-                  <td>
-                    <div className="two-fields-container">
-                      {renderInputField(
-                        formMapping.dataElements["codO_other_name"],
-                        undefined,
-                        "Other significant conditions contributing to death"
-                      )}
-                      {/* {renderInputField(formMapping.dataElements["codD_other_name"])} */}
-                      {renderCauseOfDeathsInputField(
-                        formMapping.dataElements["codO"],
-                        // formMapping.dataElements["codO_name"],
-                        formMapping.dataElements["codO_entityId"],
-                        formMapping.dataElements["codO_underlying"],
-                        formMapping.dataElements["codO_other_name"]
-                      )}
-                      <div
-                        style={{
-                          width: "20%",
-                          margin: "5px",
-                        }}
-                      >
-                        <Tooltip
-                          className={"custom-tooltip"}
-                          title={t("timeFromOnsetToDeath")}
-                        >
-                          <Button
-                            style={{
-                              width: "100%",
-                            }}
-                            disabled={
-                              !currentEvent?.dataValues[
-                                formMapping.dataElements["codO"]
-                              ] || enrollmentStatus === "COMPLETED"
-                            }
-                            onClick={() => {
-                              setTimeToDeathModal(true);
-                              setTimeToDeath({
-                                causeId: formMapping.dataElements["codO"],
-                                causeLabel: "Other Cause of Death",
-                                timeInterval: currentEvent.dataValues[
-                                  formMapping.dataElements["codO"]
-                                ]
-                                  .split(",")
-                                  .map((codeSelection) => {
-                                    return {
-                                      code: codeSelection.split(" (")[0],
-                                      time: codeSelection
-                                        .split(" (")[1]
-                                        ?.replace(")", ""),
-                                    };
-                                  }),
-                              });
-                            }}
-                          >
-                            <span
-                              style={{
-                                width: "100%",
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                display: "inline-block",
-                              }}
-                            >
-                              {t("timeFromOnsetToDeath")}
-                            </span>
-                          </Button>
-                        </Tooltip>
-                      </div>
-                    </div>
-                  </td>
-                  {/* <td>
-                          <div className="two-fields-container">
-                            {renderInputField(formMapping.dataElements["codO_time"])}
-                            {renderInputField(formMapping.dataElements["codO_periodType"])}
-                          </div>
-                        </td> */}
-                  <td>
-                    {renderInputField(
-                      formMapping.dataElements["codO_underlying"],
-                      "underlying"
-                    )}
-                  </td>
-                </tr>
-                {/* <tr>
-                        <td
-                          colSpan="5"
-                          style={{
-                            fontWeight: "bold",
-                            textAlign: "left",
-                            backgroundColor: "#f5f5f5"
-                          }}
-                        >
-                        {
-                          t("otherReasonLeadingToDeath")
-                        }
-                        </td>
-                      </tr>
-                      <tr>
-                        <td colSpan="5">{renderInputField(formMapping.dataElements["codOther"])}</td>
-                      </tr> */}
-
                 <tr>
                   <td
                     // colSpan="2"
@@ -1963,52 +1799,6 @@ const Stage = ({
             </table>
           </div>
         </div>
-        {/* <div className="stage-section">
-                <div className="stage-section-title">{t("results")}</div>
-                <div className="stage-section-content">
-                  <table className="results-table">
-                    <tbody>
-                      <tr>
-                        <td>{t("icd11")}</td>
-                        <td className="unselectable-field">
-                          {renderInputField(formMapping.dataElements["underlyingCOD_code"])}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>{t("underlyingCOD")}</td>
-                        <td className="unselectable-field">
-                          {renderInputField(formMapping.dataElements["underlyingCOD"])}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>{t("icd11Chapter")}</td>
-                        <td className="unselectable-field">
-                          {renderInputField(formMapping.dataElements["underlyingCOD_chapter"])}
-                        </td>
-                      </tr>
-                      <tr hidden="hidden">
-                        <td>{t("icd11Grouping")}</td>
-                        <td className="unselectable-field">
-                          {renderInputField(formMapping.dataElements["underlyingCOD_group"])}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                  <div className="results-compute">
-                    <p>
-                      <Button onClick={() => detectUnderlyingCauseOfDeath()}>{
-                        t("compute")
-                      }</Button> 
-                    </p>
-                    <p>
-                      <Button onClick={() => detectUnderlyingCauseOfDeath()}>{
-                        t("compute")
-                      }</Button> 
-                    </p>
-                    <div><pre>{getUcodResult()}</pre></div>
-                  </div>
-                </div>
-              </div> */}
         {formMapping.otherSections.frameA &&
           formMapping.otherSections.frameA.map((section) =>
             renderOtherSection(section)

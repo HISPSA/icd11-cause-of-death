@@ -177,26 +177,29 @@
     "given_name": "lDKfAjYyQcN",
     "family_name": "j1yPic5cJUo",
     "estimated_dob": "X5p19VIeYyW",
-    "status": "rZSVLUfgHlD",
+    "status": "rZSVLUfgHlD", 
 
-    "passport_number": "VaLOvMpF2MR",
-    "sa_id_number": "iS1g0uT0Dsb",
-    "barcode_number": "W6xJ4DSHKg7",
-    "population_group": "v4HpvqJ7hJI",
+    "passport_number":"VaLOvMpF2MR",
+    "sa_id_number":"iS1g0uT0Dsb", 
+    "barcode_number":"W6xJ4DSHKg7",
+    "population_group": "v4HpvqJ7hJI", 
     "population_group_other_specify": "MqDjnuLe77B",
-    "place_of_death": "z0dfemxNjqq",
-    "place_of_death_other_specify": "qJTGOAqDVTt",
-    "name_of_health_facility_practice": "wYURyhOSUg7",
-    "facility_contact_telephone": "AL9RcshDNuW",
+    "place_of_death":"z0dfemxNjqq", 
+    "place_of_death_other_specify":"qJTGOAqDVTt", 
+    "name_of_health_facility_practice":"wYURyhOSUg7",
+    "facility_contact_telephone":"AL9RcshDNuW",
     "patient_file_no": "lxGbgA7yh3E",
-    "facility_contact_person_surname": "eRWLJwygRa5",
-    "facility_contact_person_forenames": "uZdBYabN09P",
-    "facility_contact_person_role_rank": "a264J8r7GKz",
+    "facility_contact_person_surname":"eRWLJwygRa5",
+    "facility_contact_person_forenames":"uZdBYabN09P",
+    "facility_contact_person_role_rank":"a264J8r7GKz", 
 
-    "identification_type": "GABERrLTZHY",
-    "type_of_fileno": "XUO5t3HAq4i",
-    "HPRN_no.": "xmaRdV85Pcy",
-    "notification_date": "GABERrLTZHY"
+
+    "identification_type":"GABERrLTZHY", 
+    "type_of_fileno":"XUO5t3HAq4i", 
+    "HPRN_no.":"xmaRdV85Pcy", 
+    "notification_date":"GABERrLTZHY"
+
+    
   },
   "dataElements": {
     "codA": "RU1KXNWlT6S",
