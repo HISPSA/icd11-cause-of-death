@@ -1485,7 +1485,7 @@ const Stage = ({
                 <tr>
                   <td>
                     <div style={{ fontWeight: "bold", textAlign: "left", marginBottom: "5px" }}>
-                      Condition leading to immediate cause (Step 2)
+                      Condition leading to immediate cause 
                     </div>
                     <div className="two-fields-container">
                       {renderCauseOfDeathsInputField(
@@ -1564,7 +1564,7 @@ const Stage = ({
                 <tr>
                   <td>
                     <div style={{ fontWeight: "bold", textAlign: "left", marginBottom: "5px" }}>
-                      Condition leading to previous cause (Step 3)
+                      Condition leading to immediate cause
                     </div>
                     <div className="two-fields-container">
                       {renderCauseOfDeathsInputField(
@@ -1860,38 +1860,43 @@ const Stage = ({
                       )}
                     </td>
                   </tr>
-                  <tr>
-                    <td>{t("posisoning")}</td>
-                    <td>
-                      {renderInputField(
-                        formMapping.dataElements["dateOfInjury"]
-                      )}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>{t("describe")}</td>
-                    <td>
-                      {renderInputField(
-                        formMapping.dataElements["externalCause"]
-                      )}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>{t("occurrencePlace")}</td>
-                    <td>
-                      {renderInputField(
-                        formMapping.dataElements["externalCause_place"]
-                      )}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>{t("occurrenceSpecifyPlace")}</td>
-                    <td>
-                      {renderInputField(
-                        formMapping.dataElements["externalCause_specifiedPlace"]
-                      )}
-                    </td>
-                  </tr>
+                  {currentEvent?.dataValues[formMapping.dataElements["mannerOfDeath"]] && 
+                   currentEvent.dataValues[formMapping.dataElements["mannerOfDeath"]] !== "0" && (
+                    <>
+                      <tr>
+                        <td>{t("posisoning")}</td>
+                        <td>
+                          {renderInputField(
+                            formMapping.dataElements["dateOfInjury"]
+                          )}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>{t("describe")}</td>
+                        <td>
+                          {renderInputField(
+                            formMapping.dataElements["externalCause"]
+                          )}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>{t("occurrencePlace")}</td>
+                        <td>
+                          {renderInputField(
+                            formMapping.dataElements["externalCause_place"]
+                          )}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>{t("occurrenceSpecifyPlace")}</td>
+                        <td>
+                          {renderInputField(
+                            formMapping.dataElements["externalCause_specifiedPlace"]
+                          )}
+                        </td>
+                      </tr>
+                    </>
+                  )}
                 </tbody>
               </table>
             </div>
