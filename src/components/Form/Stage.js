@@ -1882,48 +1882,55 @@ const Stage = ({
         {deathType === "withinOneWeek" && (
           <div className="stage-section">
             <div className="stage-section-title">G2: Perinatal Death</div>
-            {/* Mother Subsection */}
-            <div className="stage-section-subtitle">Mother</div>
-            <table className="perinatal-mother-table">
-              <tbody>
-                <tr><td>Identity Number</td><td>{renderInputField(formMapping.dataElements["g2_mother_identity_number"] || "mockId01")}</td></tr>
-                <tr><td>Date of Birth</td><td>{renderInputField(formMapping.dataElements["g2_mother_dob"] || "mockId02")}</td></tr>
-                <tr><td>Age of last birthday/DoB unknown</td><td>{renderInputField(formMapping.dataElements["g2_mother_age"] || "mockId03")}</td></tr>
-                <tr><td>Number of previous pregnancies - Live births</td><td>{renderInputField(formMapping.dataElements["g2_mother_prev_live_births"] || "mockId04")}</td></tr>
-                <tr><td>Number of previous pregnancies - Still births</td><td>{renderInputField(formMapping.dataElements["g2_mother_prev_still_births"] || "mockId05")}</td></tr>
-                <tr><td>Number of previous pregnancies - Abortions</td><td>{renderInputField(formMapping.dataElements["g2_mother_prev_abortions"] || "mockId06")}</td></tr>
-                <tr><td>Outcome of last previous pregnancy</td><td>{renderInputField(formMapping.dataElements["g2_mother_last_preg_outcome"] || "mockId07")}</td></tr>
-                <tr><td>Date of last previous delivery</td><td>{renderInputField(formMapping.dataElements["g2_mother_last_delivery_date"] || "mockId08")}</td></tr>
-                <tr><td>First day of last menstrual period</td><td>{renderInputField(formMapping.dataElements["g2_mother_last_menstrual"] || "mockId09")}</td></tr>
-                <tr><td>Estimated duration of pregnancy (weeks)</td><td>{renderInputField(formMapping.dataElements["g2_mother_preg_duration"] || "mockId10")}</td></tr>
-                <tr><td>Method of delivery</td><td>{renderInputField(formMapping.dataElements["g2_mother_delivery_method"] || "mockId11")}</td></tr>
-                <tr><td>Antenatal care two or more visits</td><td>{renderInputField(formMapping.dataElements["g2_mother_antenatal"] || "mockId12")}</td></tr>
-              </tbody>
-            </table>
-            {/* Child Subsection */}
-            <div className="stage-section-subtitle">Child</div>
-            <table className="perinatal-child-table">
-              <tbody>
-                <tr><td>Type of death</td><td>{renderInputField(formMapping.dataElements["g2_child_type_of_death"] || "mockId13")}</td></tr>
-                <tr><td>Birth weight (grams)</td><td>{renderInputField(formMapping.dataElements["g2_child_birth_weight"] || "mockId14")}</td></tr>
-                <tr><td>This birth was</td><td>{renderInputField(formMapping.dataElements["g2_child_birth_type"] || "mockId15")}</td></tr>
-                <tr><td>If stillborn, heartbeat ceased</td><td>{renderInputField(formMapping.dataElements["g2_child_heartbeat_ceased"] || "mockId16")}</td></tr>
-                <tr><td>If death occurred within 24h, number of hours alive</td><td>{renderInputField(formMapping.dataElements["g2_child_hours_alive"] || "mockId17")}</td></tr>
-                <tr><td>Attendant at birth</td><td>{renderInputField(formMapping.dataElements["g2_child_attendant"] || "mockId18")}</td></tr>
-              </tbody>
-            </table>
-            {/* Causes of Death Subsection */}
-            <div className="stage-section-subtitle">Causes of Death</div>
-            <table className="perinatal-cause-table">
-              <tbody>
-                <tr><td>a. Main disease or conditions in foetus or infant</td><td>{renderInputField(formMapping.dataElements["g2_cause_main_infant"] || "mockId19")}</td></tr>
-                <tr><td>b. Other diseases or conditions in foetus or infant</td><td>{renderInputField(formMapping.dataElements["g2_cause_other_infant"] || "mockId20")}</td></tr>
-                <tr><td>c. Main maternal disease or condition affecting foetus or infant</td><td>{renderInputField(formMapping.dataElements["g2_cause_main_maternal"] || "mockId21")}</td></tr>
-                <tr><td>d. Other maternal diseases or conditions affecting foetus or infant</td><td>{renderInputField(formMapping.dataElements["g2_cause_other_maternal"] || "mockId22")}</td></tr>
-                <tr><td>e. Other relevant circumstances</td><td>{renderInputField(formMapping.dataElements["g2_cause_other_circumstances"] || "mockId23")}</td></tr>
-                <tr><td>Autopsy information</td><td>{renderInputField(formMapping.dataElements["g2_autopsy_info"] || "mockId24")}</td></tr>
-              </tbody>
-            </table>
+            <div style={{ display: 'flex', gap: '20px' }}>
+              {/* Left Column - Mother Section */}
+              <div style={{ flex: 1 }}>
+                <div className="stage-section-subtitle">Mother</div>
+                <table className="perinatal-mother-table" style={{ width: '100%' }}>
+                  <tbody>
+                    <tr><td>Identity Number</td><td>{renderInputField(formMapping.dataElements["g2_mother_identity_number"] || "mockId01")}</td></tr>
+                    <tr><td>Date of Birth</td><td>{renderInputField(formMapping.dataElements["g2_mother_dob"] || "mockId02")}</td></tr>
+                    <tr><td>Age of last birthday/DoB unknown</td><td>{renderInputField(formMapping.dataElements["g2_mother_age"] || "mockId03")}</td></tr>
+                    <tr><td>Number of previous pregnancies - Live births</td><td>{renderInputField(formMapping.dataElements["g2_mother_prev_live_births"] || "mockId04")}</td></tr>
+                    <tr><td>Number of previous pregnancies - Still births</td><td>{renderInputField(formMapping.dataElements["g2_mother_prev_still_births"] || "mockId05")}</td></tr>
+                    <tr><td>Number of previous pregnancies - Abortions</td><td>{renderInputField(formMapping.dataElements["g2_mother_prev_abortions"] || "mockId06")}</td></tr>
+                    <tr><td>Outcome of last previous pregnancy</td><td>{renderInputField(formMapping.dataElements["g2_mother_last_preg_outcome"] || "mockId07")}</td></tr>
+                    <tr><td>Date of last previous delivery</td><td>{renderInputField(formMapping.dataElements["g2_mother_last_delivery_date"] || "mockId08")}</td></tr>
+                    <tr><td>First day of last menstrual period</td><td>{renderInputField(formMapping.dataElements["g2_mother_last_menstrual"] || "mockId09")}</td></tr>
+                    <tr><td>Estimated duration of pregnancy (weeks)</td><td>{renderInputField(formMapping.dataElements["g2_mother_preg_duration"] || "mockId10")}</td></tr>
+                    <tr><td>Method of delivery</td><td>{renderInputField(formMapping.dataElements["g2_mother_delivery_method"] || "mockId11")}</td></tr>
+                    <tr><td>Antenatal care two or more visits</td><td>{renderInputField(formMapping.dataElements["g2_mother_antenatal"] || "mockId12")}</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Right Column - Child Section (including Causes of Death) */}
+              <div style={{ flex: 1 }}>
+                <div className="stage-section-subtitle">Child</div>
+                <table className="perinatal-child-table" style={{ width: '100%' }}>
+                  <tbody>
+                    <tr><td>Type of death</td><td>{renderInputField(formMapping.dataElements["g2_child_type_of_death"] || "mockId13")}</td></tr>
+                    <tr><td>Birth weight (grams)</td><td>{renderInputField(formMapping.dataElements["birth_weight"])}</td></tr>
+                    <tr><td>This birth was</td><td>{renderInputField(formMapping.dataElements["g2_child_birth_type"] || "mockId15")}</td></tr>
+                    <tr><td>If stillborn, heartbeat ceased</td><td>{renderInputField(formMapping.dataElements["g2_child_heartbeat_ceased"] || "mockId16")}</td></tr>
+                    <tr><td>If death occurred within 24h, number of hours alive</td><td>{renderInputField(formMapping.dataElements["g2_child_hours_alive"] || "mockId17")}</td></tr>
+                    <tr><td>Attendant at birth</td><td>{renderInputField(formMapping.dataElements["g2_child_attendant"] || "mockId18")}</td></tr>
+                  </tbody>
+                </table>
+
+                <div className="stage-section-subtitle" style={{ marginTop: '20px' }}>Causes of Death</div>
+                <table className="perinatal-cause-table" style={{ width: '100%' }}>
+                  <tbody>
+                    <tr><td>a. Main disease or conditions in foetus or infant</td><td>{renderInputField(formMapping.dataElements["g2_cause_main_infant"] || "mockId19")}</td></tr>
+                    <tr><td>b. Other diseases or conditions in foetus or infant</td><td>{renderInputField(formMapping.dataElements["g2_cause_other_infant"] || "mockId20")}</td></tr>
+                    <tr><td>c. Main maternal disease or condition affecting foetus or infant</td><td>{renderInputField(formMapping.dataElements["g2_cause_main_maternal"] || "mockId21")}</td></tr>
+                    <tr><td>d. Other maternal diseases or conditions affecting foetus or infant</td><td>{renderInputField(formMapping.dataElements["g2_cause_other_maternal"] || "mockId22")}</td></tr>
+                    <tr><td>e. Other relevant circumstances</td><td>{renderInputField(formMapping.dataElements["g2_cause_other_circumstances"] || "mockId23")}</td></tr>
+                    <tr><td>Autopsy information</td><td>{renderInputField(formMapping.dataElements["g2_autopsy_info"] || "mockId24")}</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
         {/* ...existing code for other sections... */}
