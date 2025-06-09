@@ -1840,6 +1840,338 @@
       "userAccesses": [ ],
       "legendSets": [ ],
       "aggregationLevels": [ ]
+    },
+    {
+      "id": "mockId01",
+      "name": "Mother's Identity Number",
+      "shortName": "Mother's Identity Number",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "Mother's Identity Number",
+      "valueType": "TEXT",
+      "zeroIsSignificant": false
+    },
+    {
+      "id": "mockId02",
+      "name": "Mother's Date of Birth",
+      "shortName": "Mother's Date of Birth",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "Mother's Date of Birth",
+      "valueType": "DATE",
+      "zeroIsSignificant": false
+    },
+    {
+      "id": "mockId03",
+      "name": "Mother's Age",
+      "shortName": "Mother's Age",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "Mother's Age of last birthday/DoB unknown",
+      "valueType": "NUMBER",
+      "zeroIsSignificant": false
+    },
+    {
+      "id": "mockId04",
+      "name": "Number of previous pregnancies - Live births",
+      "shortName": "Previous pregnancies - Live births",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "Number of previous pregnancies - Live births",
+      "valueType": "NUMBER",
+      "zeroIsSignificant": false
+    },
+    {
+      "id": "mockId05",
+      "name": "Number of previous pregnancies - Still births",
+      "shortName": "Previous pregnancies - Still births",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "Number of previous pregnancies - Still births",
+      "valueType": "NUMBER",
+      "zeroIsSignificant": false
+    },
+    {
+      "id": "mockId06",
+      "name": "Number of previous pregnancies - Abortions",
+      "shortName": "Previous pregnancies - Abortions",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "Number of previous pregnancies - Abortions",
+      "valueType": "NUMBER",
+      "zeroIsSignificant": false
+    },
+    {
+      "id": "mockId07",
+      "name": "Outcome of last previous pregnancy",
+      "shortName": "Last pregnancy outcome",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "Outcome of last previous pregnancy",
+      "valueType": "TEXT",
+      "zeroIsSignificant": false,
+      "optionSet": {
+        "id": "pregnancy_outcome",
+        "options": [
+          { "code": "live_birth", "name": "Live birth" },
+          { "code": "still_birth", "name": "Still birth" },
+          { "code": "abortion", "name": "Abortion" }
+        ]
+      }
+    },
+    {
+      "id": "mockId08",
+      "name": "Date of last previous delivery",
+      "shortName": "Last delivery date",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "Date of last previous delivery",
+      "valueType": "DATE",
+      "zeroIsSignificant": false
+    },
+    {
+      "id": "mockId09",
+      "name": "First day of last menstrual period",
+      "shortName": "Last menstrual period",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "First day of last menstrual period",
+      "valueType": "DATE",
+      "zeroIsSignificant": false
+    },
+    {
+      "id": "mockId10",
+      "name": "Estimated duration of pregnancy (weeks)",
+      "shortName": "Pregnancy duration",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "Estimated duration of pregnancy (weeks)",
+      "valueType": "NUMBER",
+      "zeroIsSignificant": false
+    },
+    {
+      "id": "mockId11",
+      "name": "Method of delivery",
+      "shortName": "Delivery method",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "Method of delivery",
+      "valueType": "TEXT",
+      "zeroIsSignificant": false,
+      "optionSet": {
+        "id": "delivery_method",
+        "options": [
+          { "code": "spontaneous", "name": "Spontaneous" },
+          { "code": "forceps", "name": "Forceps delivery" },
+          { "code": "forceps_rotation", "name": "Forceps and rotation" },
+          { "code": "vacuum", "name": "Vacuum extractor" },
+          { "code": "caesarean", "name": "Caesarean section" },
+          { "code": "other", "name": "Other (specify)" }
+        ]
+      }
+    },
+    {
+      "id": "mockId12",
+      "name": "Antenatal care two or more visits",
+      "shortName": "Antenatal care visits",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "Antenatal care two or more visits",
+      "valueType": "TEXT",
+      "zeroIsSignificant": false,
+      "optionSet": {
+        "id": "yes_no_unknown",
+        "options": [
+          { "code": "yes", "name": "Yes" },
+          { "code": "no", "name": "No" },
+          { "code": "unknown", "name": "Unknown" }
+        ]
+      }
+    },
+    {
+      "id": "mockId13",
+      "name": "Type of death",
+      "shortName": "Death type",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "Type of death",
+      "valueType": "TEXT",
+      "zeroIsSignificant": false,
+      "optionSet": {
+        "id": "death_type",
+        "options": [
+          { "code": "still_birth", "name": "Still birth" },
+          { "code": "live_birth", "name": "Live birth" }
+        ]
+      }
+    },
+    {
+      "id": "mockId14",
+      "name": "Birth weight (grams)",
+      "shortName": "Birth weight",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "Birth weight (grams)",
+      "valueType": "NUMBER",
+      "zeroIsSignificant": false
+    },
+    {
+      "id": "mockId15",
+      "name": "This birth was",
+      "shortName": "Birth type",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "This birth was",
+      "valueType": "TEXT",
+      "zeroIsSignificant": false,
+      "optionSet": {
+        "id": "birth_type",
+        "options": [
+          { "code": "single", "name": "Single birth" },
+          { "code": "first_twin", "name": "First twin" },
+          { "code": "second_twin", "name": "Second twin" },
+          { "code": "other_multiple", "name": "Other multiple" }
+        ]
+      }
+    },
+    {
+      "id": "mockId16",
+      "name": "If stillborn, heartbeat ceased",
+      "shortName": "Heartbeat ceased",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "If stillborn, heartbeat ceased",
+      "valueType": "TEXT",
+      "zeroIsSignificant": false,
+      "optionSet": {
+        "id": "heartbeat_ceased",
+        "options": [
+          { "code": "before_labour", "name": "Before labour" },
+          { "code": "during_labour", "name": "During labour but before delivery" },
+          { "code": "before_delivery_unknown", "name": "Before delivery but not known whether before or during labour" }
+        ]
+      }
+    },
+    {
+      "id": "mockId17",
+      "name": "If death occurred within 24h, number of hours alive",
+      "shortName": "Hours alive",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "If death occurred within 24h, number of hours alive",
+      "valueType": "NUMBER",
+      "zeroIsSignificant": false
+    },
+    {
+      "id": "mockId18",
+      "name": "Attendant at birth",
+      "shortName": "Birth attendant",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "Attendant at birth",
+      "valueType": "TEXT",
+      "zeroIsSignificant": false,
+      "optionSet": {
+        "id": "birth_attendant",
+        "options": [
+          { "code": "physician", "name": "Physician" },
+          { "code": "midwife", "name": "Trained midwife" },
+          { "code": "other_trained", "name": "Other trained person (specify)" },
+          { "code": "other", "name": "Other (specify)" }
+        ]
+      }
+    },
+    {
+      "id": "mockId19",
+      "name": "Main disease or conditions in foetus or infant",
+      "shortName": "Main foetus/infant condition",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "Main disease or conditions in foetus or infant",
+      "valueType": "TEXT",
+      "zeroIsSignificant": false
+    },
+    {
+      "id": "mockId20",
+      "name": "Other diseases or conditions in foetus or infant",
+      "shortName": "Other foetus/infant conditions",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "Other diseases or conditions in foetus or infant",
+      "valueType": "TEXT",
+      "zeroIsSignificant": false
+    },
+    {
+      "id": "mockId21",
+      "name": "Main maternal disease or condition affecting foetus or infant",
+      "shortName": "Main maternal condition",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "Main maternal disease or condition affecting foetus or infant",
+      "valueType": "TEXT",
+      "zeroIsSignificant": false
+    },
+    {
+      "id": "mockId22",
+      "name": "Other maternal diseases or conditions affecting foetus or infant",
+      "shortName": "Other maternal conditions",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "Other maternal diseases or conditions affecting foetus or infant",
+      "valueType": "TEXT",
+      "zeroIsSignificant": false
+    },
+    {
+      "id": "mockId23",
+      "name": "Other relevant circumstances",
+      "shortName": "Other circumstances",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "Other relevant circumstances",
+      "valueType": "TEXT",
+      "zeroIsSignificant": false
+    },
+    {
+      "id": "mockId24",
+      "name": "Autopsy information",
+      "shortName": "Autopsy info",
+      "aggregationType": "NONE",
+      "domainType": "TRACKER",
+      "publicAccess": "r-------",
+      "formName": "Autopsy information",
+      "valueType": "TEXT",
+      "zeroIsSignificant": false,
+      "optionSet": {
+        "id": "autopsy_info",
+        "options": [
+          { "code": "certified", "name": "Certified causes of death has been confirmed by autopsy" },
+          { "code": "available_later", "name": "Autopsy information may be available later" },
+          { "code": "not_performed", "name": "Autopsy not performed" }
+        ]
+      }
     }
   ]
 }

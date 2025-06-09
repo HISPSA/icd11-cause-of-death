@@ -41,7 +41,7 @@
   },
   "homepage": ".",
   "scripts": {
-    "start": "react-scripts start",
+    "start": "react-scripts start --proxy https://staging.dhis.dhmis.org/za-eidsr",
     "build": "react-scripts build",
     "postbuild": "cd build && bestzip cod-app.zip *",
     "test": "react-scripts test",
