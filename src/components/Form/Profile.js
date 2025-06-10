@@ -522,8 +522,15 @@ const Profile = ({
         .map((attribute) => populateInputField(attribute))} */}
 
       {populateInputField(formMapping.attributes["identification_type"])}
-      {populateInputField(formMapping.attributes["sa_id_number"])}       
-      {populateInputField(formMapping.attributes["passport_number"])}
+  
+      {/* Conditional rendering of ID fields based on identification type */}
+      {currentTei.attributes[formMapping.attributes["identification_type"]] === "ID_TYPE_SA" && (
+        populateInputField(formMapping.attributes["sa_id_number"])
+      )}
+      {currentTei.attributes[formMapping.attributes["identification_type"]] === "ID_TYPE_PASSPORT" && (
+        populateInputField(formMapping.attributes["passport_number"])
+      )}
+
       {renderDOBGroup()}
       {populateInputField(formMapping.attributes["sex"])}
       {fullnameOption !== "noname" &&
