@@ -525,7 +525,6 @@ const Profile = ({
       {populateInputField(formMapping.attributes["sa_id_number"])}       
       {populateInputField(formMapping.attributes["passport_number"])}
       {renderDOBGroup()}
-
       {populateInputField(formMapping.attributes["sex"])}
       {fullnameOption !== "noname" &&
         fullnameOption !== "fullname" &&
@@ -558,7 +557,7 @@ const Profile = ({
       )}
       {populateInputField(formMapping.attributes["type_of_fileno"])}
       {populateInputField(formMapping.attributes["HPRN_no"])}
-      {populateInputField(formMapping.attributes["notification_date"])}
+      {populateInputField(formMapping.attributes["notification_date"])} 
 
       {/* For other attributes */}
       {programMetadata.trackedEntityAttributes

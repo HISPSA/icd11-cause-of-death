@@ -1390,8 +1390,14 @@ const Stage = ({
             <InputField
               valueType="TEXT"
               valueSet={[
-                { label: "Death occurred after one week of birth (G1)", value: "afterOneWeek" },
-                { label: "Death occurred within one week of birth (G2)", value: "withinOneWeek" }
+                {
+                  label: "Death occurred after one week of birth (G1)",
+                  value: "afterOneWeek",
+                },
+                {
+                  label: "Death occurred within one week of birth (G2)",
+                  value: "withinOneWeek",
+                },
               ]}
               value={deathType}
               change={setDeathType}
@@ -1425,7 +1431,13 @@ const Stage = ({
                     </tr>
                     <tr>
                       <td>
-                        <div style={{ fontWeight: "bold", textAlign: "left", marginBottom: "5px" }}>
+                        <div
+                          style={{
+                            fontWeight: "bold",
+                            textAlign: "left",
+                            marginBottom: "5px",
+                          }}
+                        >
                           Immediate cause of death
                         </div>
                         <div className="two-fields-container">
@@ -1504,8 +1516,14 @@ const Stage = ({
                     </tr>
                     <tr>
                       <td>
-                        <div style={{ fontWeight: "bold", textAlign: "left", marginBottom: "5px" }}>
-                          Condition leading to immediate cause 
+                        <div
+                          style={{
+                            fontWeight: "bold",
+                            textAlign: "left",
+                            marginBottom: "5px",
+                          }}
+                        >
+                          Condition leading to immediate cause
                         </div>
                         <div className="two-fields-container">
                           {renderCauseOfDeathsInputField(
@@ -1542,7 +1560,8 @@ const Stage = ({
                                   setTimeToDeathModal(true);
                                   setTimeToDeath({
                                     causeId: formMapping.dataElements["codB"],
-                                    causeLabel: "Condition leading to immediate cause",
+                                    causeLabel:
+                                      "Condition leading to immediate cause",
                                     timeInterval: currentEvent.dataValues[
                                       formMapping.dataElements["codB"]
                                     ]
@@ -1583,7 +1602,13 @@ const Stage = ({
                     </tr>
                     <tr>
                       <td>
-                        <div style={{ fontWeight: "bold", textAlign: "left", marginBottom: "5px" }}>
+                        <div
+                          style={{
+                            fontWeight: "bold",
+                            textAlign: "left",
+                            marginBottom: "5px",
+                          }}
+                        >
                           Condition leading to immediate cause
                         </div>
                         <div className="two-fields-container">
@@ -1621,7 +1646,8 @@ const Stage = ({
                                   setTimeToDeathModal(true);
                                   setTimeToDeath({
                                     causeId: formMapping.dataElements["codC"],
-                                    causeLabel: "Condition leading to previous cause",
+                                    causeLabel:
+                                      "Condition leading to previous cause",
                                     timeInterval: currentEvent.dataValues[
                                       formMapping.dataElements["codC"]
                                     ]
@@ -1662,7 +1688,13 @@ const Stage = ({
                     </tr>
                     <tr>
                       <td>
-                        <div style={{ fontWeight: "bold", textAlign: "left", marginBottom: "5px" }}>
+                        <div
+                          style={{
+                            fontWeight: "bold",
+                            textAlign: "left",
+                            marginBottom: "5px",
+                          }}
+                        >
                           Underlying cause of death
                         </div>
                         <div className="two-fields-container">
@@ -1811,7 +1843,9 @@ const Stage = ({
                       >
                         Reason for Manual Code:
                         {renderInputField(
-                          formMapping.dataElements["reason_of_manual_COD_selection"]
+                          formMapping.dataElements[
+                            "reason_of_manual_COD_selection"
+                          ]
                         )}
                       </td>
                     </tr>
@@ -1819,117 +1853,759 @@ const Stage = ({
                 </table>
               </div>
             </div>
-            {/* Show Manner of Death section only for G1 */}
-            {formMapping.sections.find(({ name }) => name === "Manner of death") && (
-              <div className="stage-section">
-                <div className="stage-section-title">{t("mannerOfDeath")}</div>
-                <div className="stage-section-content">
-                  <table className="manner-death-table">
-                    <tbody>
-                      <tr>
-                        <td>{t("mannerOfDeath")}</td>
-                        <td>
-                          {renderInputField(
-                            formMapping.dataElements["mannerOfDeath"]
-                          )}
-                        </td>
-                      </tr>
-                      {currentEvent?.dataValues[formMapping.dataElements["mannerOfDeath"]] &&
-                        currentEvent.dataValues[formMapping.dataElements["mannerOfDeath"]] !== "0" && (
-                          <>
-                            <tr>
-                              <td>{t("posisoning")}</td>
-                              <td>
-                                {renderInputField(
-                                  formMapping.dataElements["dateOfInjury"]
-                                )}
-                              </td>
-                            </tr>
-                            <tr>
-                              <td>{t("describe")}</td>
-                              <td>
-                                {renderInputField(
-                                  formMapping.dataElements["externalCause"]
-                                )}
-                              </td>
-                            </tr>
-                            <tr>
-                              <td>{t("occurrencePlace")}</td>
-                              <td>
-                                {renderInputField(
-                                  formMapping.dataElements["externalCause_place"]
-                                )}
-                              </td>
-                            </tr>
-                            <tr>
-                              <td>{t("occurrenceSpecifyPlace")}</td>
-                              <td>
-                                {renderInputField(
-                                  formMapping.dataElements["externalCause_specifiedPlace"]
-                                )}
-                              </td>
-                            </tr>
-                          </>
-                        )}
-                    </tbody>
-                  </table>
+
+            {/* New Pregnancy Status Section for G1 */}
+            {deathType === "afterOneWeek" &&
+              currentTeiSexAttributeValue === femaleCode && (
+                <div className="stage-section">
+                  <div className="stage-section-title">Pregnancy Status</div>
+                  <div className="stage-section-content">
+                    <table className="pregnancy-status-table">
+                      <tbody>
+                        <tr>
+                          <td style={{ width: "90%" }}>
+                            Was the deceased pregnant at time of death or up to
+                            42 days prior to death
+                            <div>
+                              {renderInputField(
+                                formMapping.dataElements[
+                                  "pregnant_at_time_of_birth"
+                                ]
+                              )}
+                            </div>
+                          </td>
+                          <td>
+                            {/* {renderInputField(
+                            formMapping.dataElements["pregnant_at_time_of_birth"]
+                          )} */}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
           </>
         )}
         {/* G2 Section: Perinatal Death */}
         {deathType === "withinOneWeek" && (
           <div className="stage-section">
             <div className="stage-section-title">G2: Perinatal Death</div>
-            <div style={{ display: 'flex', gap: '20px' }}>
+            <div style={{ display: "flex", gap: "20px" }}>
               {/* Left Column - Mother Section */}
               <div style={{ flex: 1 }}>
                 <div className="stage-section-subtitle">Mother</div>
-                <table className="perinatal-mother-table" style={{ width: '100%' }}>
+                <table
+                  className="perinatal-mother-table"
+                  style={{ width: "100%" }}
+                >
                   <tbody>
-                    <tr><td>Identity Number</td><td>{renderInputField(formMapping.dataElements["g2_mother_identity_number"] || "mockId01")}</td></tr>
-                    <tr><td>Date of Birth</td><td>{renderInputField(formMapping.dataElements["g2_mother_dob"] || "mockId02")}</td></tr>
-                    <tr><td>Age of last birthday/DoB unknown</td><td>{renderInputField(formMapping.dataElements["g2_mother_age"] || "mockId03")}</td></tr>
-                    <tr><td>Number of previous pregnancies - Live births</td><td>{renderInputField(formMapping.dataElements["g2_mother_prev_live_births"] || "mockId04")}</td></tr>
-                    <tr><td>Number of previous pregnancies - Still births</td><td>{renderInputField(formMapping.dataElements["g2_mother_prev_still_births"] || "mockId05")}</td></tr>
-                    <tr><td>Number of previous pregnancies - Abortions</td><td>{renderInputField(formMapping.dataElements["g2_mother_prev_abortions"] || "mockId06")}</td></tr>
-                    <tr><td>Outcome of last previous pregnancy</td><td>{renderInputField(formMapping.dataElements["g2_mother_last_preg_outcome"] || "mockId07")}</td></tr>
-                    <tr><td>Date of last previous delivery</td><td>{renderInputField(formMapping.dataElements["g2_mother_last_delivery_date"] || "mockId08")}</td></tr>
-                    <tr><td>First day of last menstrual period</td><td>{renderInputField(formMapping.dataElements["g2_mother_last_menstrual"] || "mockId09")}</td></tr>
-                    <tr><td>Estimated duration of pregnancy (weeks)</td><td>{renderInputField(formMapping.dataElements["g2_mother_preg_duration"] || "mockId10")}</td></tr>
-                    <tr><td>Method of delivery</td><td>{renderInputField(formMapping.dataElements["g2_mother_delivery_method"] || "mockId11")}</td></tr>
-                    <tr><td>Antenatal care two or more visits</td><td>{renderInputField(formMapping.dataElements["g2_mother_antenatal"] || "mockId12")}</td></tr>
+                    <tr>
+                      <td style={{ fontWeight: "bold" }}>Identity Number</td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: "100%" }}>
+                        {renderInputField(
+                          formMapping.dataElements["mother_identity_number"]
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: "bold" }}>Date of Birth</td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: "100%" }}>
+                        {renderInputField(
+                          formMapping.dataElements["mother_dob"]
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: "bold" }}>
+                        Age of last birthday/DoB unknown
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: "100%" }}>
+                        {renderInputField(
+                          formMapping.dataElements["mother_age"]
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: "bold" }}>
+                        Number of previous pregnancies - Live births
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: "100%" }}>
+                        {renderInputField(
+                          formMapping.dataElements["live_births"]
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: "bold" }}>
+                        Number of previous pregnancies - Still births
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: "100%" }}>
+                        {renderInputField(
+                          formMapping.dataElements["still_births"]
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: "bold" }}>
+                        Number of previous pregnancies - Abortions
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: "100%" }}>
+                        {renderInputField(
+                          formMapping.dataElements["g2_mother_prev_abortions"]
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: "bold" }}>
+                        Outcome of last previous pregnancy
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: "100%" }}>
+                        {renderInputField(
+                          formMapping.dataElements["last_preg_outcome"]
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: "bold" }}>
+                        Date of last previous delivery
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: "100%" }}>
+                        {renderInputField(
+                          formMapping.dataElements["previous_delivery_date"]
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: "bold" }}>
+                        First day of last menstrual period
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: "100%" }}>
+                        {renderInputField(
+                          formMapping.dataElements[
+                            "first_day_of_last_menstrual"
+                          ]
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: "bold" }}>
+                        Estimated duration of pregnancy (weeks)
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: "100%" }}>
+                        {renderInputField(
+                          formMapping.dataElements["preg_duration"]
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: "bold" }}>Method of delivery</td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: "100%" }}>
+                        {renderInputField(
+                          formMapping.dataElements["delivery_method"]
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: "bold" }}>
+                        Antenatal care two or more visits
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: "100%" }}>
+                        {renderInputField(
+                          formMapping.dataElements["antenatal_visits"]
+                        )}
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
 
-              {/* Right Column - Child Section (including Causes of Death) */}
+              {/* Right Column - Child Section */}
               <div style={{ flex: 1 }}>
                 <div className="stage-section-subtitle">Child</div>
-                <table className="perinatal-child-table" style={{ width: '100%' }}>
+                <table
+                  className="perinatal-child-table"
+                  style={{ width: "100%" }}
+                >
                   <tbody>
-                    <tr><td>Type of death</td><td>{renderInputField(formMapping.dataElements["g2_child_type_of_death"] || "mockId13")}</td></tr>
-                    <tr><td>Birth weight (grams)</td><td>{renderInputField(formMapping.dataElements["birth_weight"])}</td></tr>
-                    <tr><td>This birth was</td><td>{renderInputField(formMapping.dataElements["g2_child_birth_type"] || "mockId15")}</td></tr>
-                    <tr><td>If stillborn, heartbeat ceased</td><td>{renderInputField(formMapping.dataElements["g2_child_heartbeat_ceased"] || "mockId16")}</td></tr>
-                    <tr><td>If death occurred within 24h, number of hours alive</td><td>{renderInputField(formMapping.dataElements["g2_child_hours_alive"] || "mockId17")}</td></tr>
-                    <tr><td>Attendant at birth</td><td>{renderInputField(formMapping.dataElements["g2_child_attendant"] || "mockId18")}</td></tr>
-                  </tbody>
-                </table>
-
-                <div className="stage-section-subtitle" style={{ marginTop: '20px' }}>Causes of Death</div>
-                <table className="perinatal-cause-table" style={{ width: '100%' }}>
-                  <tbody>
-                    <tr><td>a. Main disease or conditions in foetus or infant</td><td>{renderInputField(formMapping.dataElements["g2_cause_main_infant"] || "mockId19")}</td></tr>
-                    <tr><td>b. Other diseases or conditions in foetus or infant</td><td>{renderInputField(formMapping.dataElements["g2_cause_other_infant"] || "mockId20")}</td></tr>
-                    <tr><td>c. Main maternal disease or condition affecting foetus or infant</td><td>{renderInputField(formMapping.dataElements["g2_cause_main_maternal"] || "mockId21")}</td></tr>
-                    <tr><td>d. Other maternal diseases or conditions affecting foetus or infant</td><td>{renderInputField(formMapping.dataElements["g2_cause_other_maternal"] || "mockId22")}</td></tr>
-                    <tr><td>e. Other relevant circumstances</td><td>{renderInputField(formMapping.dataElements["g2_cause_other_circumstances"] || "mockId23")}</td></tr>
-                    <tr><td>Autopsy information</td><td>{renderInputField(formMapping.dataElements["g2_autopsy_info"] || "mockId24")}</td></tr>
+                    <tr>
+                      <td style={{ fontWeight: "bold" }}>Type of death</td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: "100%" }}>
+                        {renderInputField(
+                          formMapping.dataElements["child_type_of_death"]
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: "bold" }}>
+                        Birth weight (grams)
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: "100%" }}>
+                        {renderInputField(
+                          formMapping.dataElements["birth_weight"]
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: "bold" }}>This birth was</td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: "100%" }}>
+                        {renderInputField(
+                          formMapping.dataElements["child_birth_type"]
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: "bold" }}>
+                        Was this a still born
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: "100%" }}>
+                        {renderInputField(
+                          formMapping.dataElements["stillborn"]
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: "bold" }}>
+                        If stillborn, heartbeat ceased
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: "100%" }}>
+                        {renderInputField(
+                          formMapping.dataElements["heartbeat_ceased_type"]
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: "bold" }}>
+                        If death occurred within 24h, number of hours alive
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: "100%" }}>
+                        {renderInputField(
+                          formMapping.dataElements["hours_newborn_survived"]
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: "bold" }}>Attendant at birth</td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: "100%" }}>
+                        {renderInputField(
+                          formMapping.dataElements["attendant_at_birth"]
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: "bold" }}>Other Attendant</td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: "100%" }}>
+                        {renderInputField(
+                          formMapping.dataElements["attendant_at_birth_other"]
+                        )}
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
+            </div>
+
+            {/* Cause of Death Section - Reusing G1 fields */}
+            <div className="stage-section" style={{ marginTop: "20px" }}>
+              <div className="stage-section-title">Cause of Death</div>
+              <div className="stage-section-content">
+                <table className="medical-data-table">
+                  <tbody>
+                    <tr>
+                      <td
+                        colSpan="3"
+                        style={{
+                          fontWeight: "bold",
+                          textAlign: "left",
+                          backgroundColor: "#f5f5f5",
+                        }}
+                      >
+                        {t("reasonLeadingToDeath")}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ width: "90%" }}>{t("causeOfDeath")}</td>
+                      <td>{t("underlying")}</td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div
+                          style={{
+                            fontWeight: "bold",
+                            textAlign: "left",
+                            marginBottom: "5px",
+                          }}
+                        >
+                          Main disease or conditions in foetus or infant
+                        </div>
+                        <div className="two-fields-container">
+                          {renderCauseOfDeathsInputField(
+                            formMapping.dataElements["codA"],
+                            formMapping.dataElements["codA_entityId"],
+                            formMapping.dataElements["codA_underlying"],
+                            formMapping.dataElements["codA_other_name"]
+                          )}
+                          {renderInputField(
+                            formMapping.dataElements["codA_other_name"],
+                            undefined,
+                            "A (Free text)"
+                          )}
+                          <div style={{ width: "20%", margin: "5px" }}>
+                            <Tooltip
+                              className={"custom-tooltip"}
+                              title={t("timeFromOnsetToDeath")}
+                            >
+                              <Button
+                                style={{ width: "100%" }}
+                                disabled={
+                                  !currentEvent?.dataValues[
+                                    formMapping.dataElements["codA"]
+                                  ] || enrollmentStatus === "COMPLETED"
+                                }
+                                onClick={() => {
+                                  setTimeToDeathModal(true);
+                                  setTimeToDeath({
+                                    causeId: formMapping.dataElements["codA"],
+                                    causeLabel: "Immediate cause of death",
+                                    timeInterval: currentEvent.dataValues[
+                                      formMapping.dataElements["codA"]
+                                    ]
+                                      .split(",")
+                                      .map((codeSelection) => ({
+                                        code: codeSelection.split(" (")[0],
+                                        time: codeSelection
+                                          .split(" (")[1]
+                                          ?.replace(")", ""),
+                                      })),
+                                  });
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    width: "100%",
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    display: "inline-block",
+                                  }}
+                                >
+                                  {t("timeFromOnsetToDeath")}
+                                </span>
+                              </Button>
+                            </Tooltip>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        {renderInputField(
+                          formMapping.dataElements["codA_underlying"],
+                          "underlying"
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div
+                          style={{
+                            fontWeight: "bold",
+                            textAlign: "left",
+                            marginBottom: "5px",
+                          }}
+                        >
+                          Other diseases or conditions in foetus or infant
+                        </div>
+                        <div className="two-fields-container">
+                          {renderCauseOfDeathsInputField(
+                            formMapping.dataElements["codB"],
+                            formMapping.dataElements["codB_entityId"],
+                            formMapping.dataElements["codB_underlying"],
+                            formMapping.dataElements["codB_other_name"]
+                          )}
+                          {renderInputField(
+                            formMapping.dataElements["codB_other_name"],
+                            undefined,
+                            "B (Free text)"
+                          )}
+                          <div style={{ width: "20%", margin: "5px" }}>
+                            <Tooltip
+                              className={"custom-tooltip"}
+                              title={t("timeFromOnsetToDeath")}
+                            >
+                              <Button
+                                style={{ width: "100%" }}
+                                disabled={
+                                  !currentEvent?.dataValues[
+                                    formMapping.dataElements["codB"]
+                                  ] || enrollmentStatus === "COMPLETED"
+                                }
+                                onClick={() => {
+                                  setTimeToDeathModal(true);
+                                  setTimeToDeath({
+                                    causeId: formMapping.dataElements["codB"],
+                                    causeLabel:
+                                      "Condition leading to immediate cause",
+                                    timeInterval: currentEvent.dataValues[
+                                      formMapping.dataElements["codB"]
+                                    ]
+                                      .split(",")
+                                      .map((codeSelection) => ({
+                                        code: codeSelection.split(" (")[0],
+                                        time: codeSelection
+                                          .split(" (")[1]
+                                          ?.replace(")", ""),
+                                      })),
+                                  });
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    width: "100%",
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    display: "inline-block",
+                                  }}
+                                >
+                                  {t("timeFromOnsetToDeath")}
+                                </span>
+                              </Button>
+                            </Tooltip>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        {renderInputField(
+                          formMapping.dataElements["codB_underlying"],
+                          "underlying"
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div
+                          style={{
+                            fontWeight: "bold",
+                            textAlign: "left",
+                            marginBottom: "5px",
+                          }}
+                        >
+                          Main maternal disease or condition affecting foetus or
+                          infant
+                        </div>
+                        <div className="two-fields-container">
+                          {renderCauseOfDeathsInputField(
+                            formMapping.dataElements["codC"],
+                            formMapping.dataElements["codC_entityId"],
+                            formMapping.dataElements["codC_underlying"],
+                            formMapping.dataElements["codC_other_name"]
+                          )}
+                          {renderInputField(
+                            formMapping.dataElements["codC_other_name"],
+                            undefined,
+                            "C (Free text)"
+                          )}
+                          <div style={{ width: "20%", margin: "5px" }}>
+                            <Tooltip
+                              className={"custom-tooltip"}
+                              title={t("timeFromOnsetToDeath")}
+                            >
+                              <Button
+                                style={{ width: "100%" }}
+                                disabled={
+                                  !currentEvent?.dataValues[
+                                    formMapping.dataElements["codC"]
+                                  ] || enrollmentStatus === "COMPLETED"
+                                }
+                                onClick={() => {
+                                  setTimeToDeathModal(true);
+                                  setTimeToDeath({
+                                    causeId: formMapping.dataElements["codC"],
+                                    causeLabel:
+                                      "Condition leading to previous cause",
+                                    timeInterval: currentEvent.dataValues[
+                                      formMapping.dataElements["codC"]
+                                    ]
+                                      .split(",")
+                                      .map((codeSelection) => ({
+                                        code: codeSelection.split(" (")[0],
+                                        time: codeSelection
+                                          .split(" (")[1]
+                                          ?.replace(")", ""),
+                                      })),
+                                  });
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    width: "100%",
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    display: "inline-block",
+                                  }}
+                                >
+                                  {t("timeFromOnsetToDeath")}
+                                </span>
+                              </Button>
+                            </Tooltip>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        {renderInputField(
+                          formMapping.dataElements["codC_underlying"],
+                          "underlying"
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div
+                          style={{
+                            fontWeight: "bold",
+                            textAlign: "left",
+                            marginBottom: "5px",
+                          }}
+                        >
+                          Other maternal diseases or conditions affecting foetus
+                          or infant
+                        </div>
+                        <div className="two-fields-container">
+                          {renderCauseOfDeathsInputField(
+                            formMapping.dataElements["codD"],
+                            formMapping.dataElements["codD_entityId"],
+                            formMapping.dataElements["codD_underlying"],
+                            formMapping.dataElements["codD_other_name"]
+                          )}
+                          {renderInputField(
+                            formMapping.dataElements["codD_other_name"],
+                            undefined,
+                            "D (Free text)"
+                          )}
+                          <div style={{ width: "20%", margin: "5px" }}>
+                            <Tooltip
+                              className={"custom-tooltip"}
+                              title={t("timeFromOnsetToDeath")}
+                            >
+                              <Button
+                                style={{ width: "100%" }}
+                                disabled={
+                                  !currentEvent?.dataValues[
+                                    formMapping.dataElements["codD"]
+                                  ] || enrollmentStatus === "COMPLETED"
+                                }
+                                onClick={() => {
+                                  setTimeToDeathModal(true);
+                                  setTimeToDeath({
+                                    causeId: formMapping.dataElements["codD"],
+                                    causeLabel: "Underlying cause of death",
+                                    timeInterval: currentEvent.dataValues[
+                                      formMapping.dataElements["codD"]
+                                    ]
+                                      .split(",")
+                                      .map((codeSelection) => ({
+                                        code: codeSelection.split(" (")[0],
+                                        time: codeSelection
+                                          .split(" (")[1]
+                                          ?.replace(")", ""),
+                                      })),
+                                  });
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    width: "100%",
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    display: "inline-block",
+                                  }}
+                                >
+                                  {t("timeFromOnsetToDeath")}
+                                </span>
+                              </Button>
+                            </Tooltip>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        {renderInputField(
+                          formMapping.dataElements["codD_underlying"],
+                          "underlying"
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        colSpan="2"
+                        style={{
+                          backgroundColor: "#f5f5f5",
+                          textAlign: "right",
+                        }}
+                      >
+                        <strong>Underlying Cause of Death processed by:</strong>{" "}
+                        {renderInputField(
+                          formMapping.dataElements["underlyingCOD_processed_by"]
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        colSpan="2"
+                        style={{
+                          backgroundColor: "#f5f5f5",
+                          textAlign: "right",
+                        }}
+                      >
+                        <strong>DORIS tool:</strong>
+                        <Button
+                          onClick={() => {
+                            detectUnderlyingCauseOfDeath();
+                          }}
+                          disabled={
+                            (currentEvent &&
+                              currentEvent.dataValues[
+                                formMapping.dataElements[
+                                  "underlyingCOD_processed_by"
+                                ]
+                              ] &&
+                              currentEvent.dataValues[
+                                formMapping.dataElements[
+                                  "underlyingCOD_processed_by"
+                                ]
+                              ] === "Manual") ||
+                            enrollmentStatus === "COMPLETED"
+                          }
+                        >
+                          {t("compute")}
+                        </Button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        colSpan="2"
+                        style={{
+                          backgroundColor: "#f5f5f5",
+                          textAlign: "right",
+                        }}
+                      >
+                        Reason for Manual Code:
+                        {renderInputField(
+                          formMapping.dataElements[
+                            "reason_of_manual_COD_selection"
+                          ]
+                        )}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Manner of Death section - Now outside both G1 and G2 */}
+        {formMapping.sections.find(
+          ({ name }) => name === "Manner of death"
+        ) && (
+          <div className="stage-section">
+            <div className="stage-section-title">{t("mannerOfDeath")}</div>
+            <div className="stage-section-content">
+              <table className="manner-death-table">
+                <tbody>
+                  <tr>
+                    <td>{t("mannerOfDeath")}</td>
+                    <td>
+                      {renderInputField(
+                        formMapping.dataElements["mannerOfDeath"]
+                      )}
+                    </td>
+                  </tr>
+
+                  {currentEvent?.dataValues[
+                    formMapping.dataElements["mannerOfDeath"]
+                  ] &&
+                    currentEvent.dataValues[
+                      formMapping.dataElements["mannerOfDeath"]
+                    ] !== "0" && (
+                      <>
+                        <tr>
+                          <td>{t("posisoning")}</td>
+                          <td>
+                            {renderInputField(
+                              formMapping.dataElements["dateOfInjury"]
+                            )}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>{t("describe")}</td>
+                          <td>
+                            {renderInputField(
+                              formMapping.dataElements["externalCause"]
+                            )}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>{t("occurrencePlace")}</td>
+                          <td>
+                            {renderInputField(
+                              formMapping.dataElements["externalCause_place"]
+                            )}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>{t("occurrenceSpecifyPlace")}</td>
+                          <td>
+                            {renderInputField(
+                              formMapping.dataElements[
+                                "externalCause_specifiedPlace"
+                              ]
+                            )}
+                          </td>
+                        </tr>
+                      </>
+                    )}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
