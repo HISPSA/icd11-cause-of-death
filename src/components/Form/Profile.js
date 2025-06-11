@@ -61,6 +61,48 @@ const Profile = ({
     }
   }, [currentEnrollment["enrollmentDate"], currentEnrollment["incidentDate"]]);
 
+  // Add useEffect for SA ID processing
+  useEffect(() => {
+    const saIdNumber =
+      currentTei.attributes[formMapping.attributes["sa_id_number"]];
+    const idType =
+      currentTei.attributes[formMapping.attributes["identification_type"]];
+
+    // Only process if we have a complete 13-digit ID number and correct ID type
+    if (
+      idType === "ID_TYPE_SA" &&
+      saIdNumber &&
+      saIdNumber.length === 13 &&
+      /^\d+$/.test(saIdNumber)
+    ) {
+      try {
+        const year = parseInt(saIdNumber.substring(0, 2));
+        const month = saIdNumber.substring(2, 4);
+        const day = saIdNumber.substring(4, 6);
+
+        // Determine full year (assuming 1900s for now)
+        const fullYear = year < 50 ? 2000 + year : 1900 + year;
+
+        // Create date string in YYYY-MM-DD format
+        const dob = `${fullYear}-${month}-${day}`;
+
+        // Validate if it's a valid date
+        if (moment(dob, "YYYY-MM-DD", true).isValid()) {
+          // Update the DOB field
+          mutateAttribute(formMapping.attributes["dob"], dob);
+
+          // Calculate and update age
+          const age = moment().diff(moment(dob), "years");
+          if (age >= 0 && age <= 150) {
+            mutateAttribute(formMapping.attributes["age"], age.toString());
+          }
+        }
+      } catch (error) {
+        console.error("Error processing SA ID:", error);
+      }
+    }
+  }, [currentTei.attributes[formMapping.attributes["sa_id_number"]]]);
+
   const getTeaMetadata = (attribute) =>
     programMetadata.trackedEntityAttributes.find((tea) => tea.id === attribute);
 
@@ -77,8 +119,17 @@ const Profile = ({
           valueType={tea.valueType}
           label={tea.displayFormName}
           valueSet={tea.valueSet}
-          change={(value) => {
-            mutateAttribute(tea.id, value);
+          change={(newValue) => {
+            // Add validation for SA ID number
+            if (attribute === formMapping.attributes["sa_id_number"]) {
+              // Only allow numbers and limit to 13 digits
+              const numericValue = newValue.replace(/[^0-9]/g, "");
+              if (numericValue.length <= 13) {
+                mutateAttribute(tea.id, numericValue);
+              }
+            } else {
+              mutateAttribute(tea.id, newValue);
+            }
           }}
           disabled={
             attribute === formMapping.attributes["system_id"] ||
@@ -365,8 +416,7 @@ const Profile = ({
         mandatory={true}
       />
 
-      {populateInputField(formMapping.attributes["notification_date"])}  
-
+      {populateInputField(formMapping.attributes["notification_date"])}
 
       {/*         
         SA Custom Changes - 01/06/2025
@@ -375,7 +425,6 @@ const Profile = ({
       {populateInputField(formMapping.attributes["system_id"])}
       {populateInputField(formMapping.attributes["barcode_number"])}
       {populateInputField(formMapping.attributes["address"])}
-
 
       <InputField
         value={currentEnrollment.incidentDate || ""}
@@ -521,15 +570,25 @@ const Profile = ({
         .slice(0, 3)
         .map((attribute) => populateInputField(attribute))} */}
 
+      {populateInputField(formMapping.attributes["type_of_fileno"])}
+
+      {/* Conditional rendering of file number fields based on type_of_fileno */}
+      {(currentTei.attributes[formMapping.attributes["type_of_fileno"]] === "TYPE_HPRN" ||
+        currentTei.attributes[formMapping.attributes["type_of_fileno"]] === "TYPE_BOTH") &&
+        populateInputField(formMapping.attributes["HPRN_no"])}
+      {(currentTei.attributes[formMapping.attributes["type_of_fileno"]] === "TYPE_PAT_FILE" ||
+        currentTei.attributes[formMapping.attributes["type_of_fileno"]] === "TYPE_BOTH") &&
+        populateInputField(formMapping.attributes["patient_file_no"])}
+
       {populateInputField(formMapping.attributes["identification_type"])}
-  
+
       {/* Conditional rendering of ID fields based on identification type */}
-      {currentTei.attributes[formMapping.attributes["identification_type"]] === "ID_TYPE_SA" && (
-        populateInputField(formMapping.attributes["sa_id_number"])
-      )}
-      {currentTei.attributes[formMapping.attributes["identification_type"]] === "ID_TYPE_PASSPORT" && (
-        populateInputField(formMapping.attributes["passport_number"])
-      )}
+      {currentTei.attributes[formMapping.attributes["identification_type"]] ===
+        "ID_TYPE_SA" &&
+        populateInputField(formMapping.attributes["sa_id_number"])}
+      {currentTei.attributes[formMapping.attributes["identification_type"]] ===
+        "ID_TYPE_PASSPORT" &&
+        populateInputField(formMapping.attributes["passport_number"])}
 
       {renderDOBGroup()}
       {populateInputField(formMapping.attributes["sex"])}
@@ -552,7 +611,7 @@ const Profile = ({
         formMapping.attributes["name_of_health_facility_practice"]
       )}
       {populateInputField(formMapping.attributes["facility_contact_telephone"])}
-      {populateInputField(formMapping.attributes["patient_file_no"])}
+
       {populateInputField(
         formMapping.attributes["facility_contact_person_surname"]
       )}
@@ -562,9 +621,8 @@ const Profile = ({
       {populateInputField(
         formMapping.attributes["facility_contact_person_role_rank"]
       )}
-      {populateInputField(formMapping.attributes["type_of_fileno"])}
-      {populateInputField(formMapping.attributes["HPRN_no"])}
-      {populateInputField(formMapping.attributes["notification_date"])} 
+
+      {populateInputField(formMapping.attributes["notification_date"])}
 
       {/* For other attributes */}
       {programMetadata.trackedEntityAttributes
