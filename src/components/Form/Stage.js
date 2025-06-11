@@ -2541,6 +2541,29 @@ const Stage = ({
                 </table>
               </div>
             </div>
+
+            {/* Pregnancy Status Section for G2 - Only for females */}
+            {currentTeiSexAttributeValue === femaleCode && (
+              <div className="stage-section" style={{ marginTop: "20px" }}>
+                <div className="stage-section-title">Pregnancy Status</div>
+                <div className="stage-section-content">
+                  <table className="pregnancy-status-table">
+                    <tbody>
+                      <tr>
+                        <td style={{ width: "90%" }}>
+                          Was she pregnant at the time of death or up to 42 days prior to death
+                          <div>
+                            {renderInputField(
+                              formMapping.dataElements["pregnant_at_time_of_birth"]
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         )}
         {/* Manner of Death section - Now outside both G1 and G2 */}

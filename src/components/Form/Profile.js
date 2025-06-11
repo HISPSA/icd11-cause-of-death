@@ -426,7 +426,16 @@ const Profile = ({
     */}
       {populateInputField(formMapping.attributes["system_id"])}
       {populateInputField(formMapping.attributes["barcode_number"])}
-      {populateInputField(formMapping.attributes["address"])}
+
+       {populateInputField(formMapping.attributes["identification_type"])}
+
+      {/* Conditional rendering of ID fields based on identification type */}
+      {currentTei.attributes[formMapping.attributes["identification_type"]] ===
+        "ID_TYPE_SA" &&
+        populateInputField(formMapping.attributes["sa_id_number"], true)}
+      {currentTei.attributes[formMapping.attributes["identification_type"]] ===
+        "ID_TYPE_PASSPORT" &&
+        populateInputField(formMapping.attributes["passport_number"], true)}
 
       <InputField
         value={currentEnrollment.incidentDate || ""}
@@ -572,29 +581,7 @@ const Profile = ({
         .slice(0, 3)
         .map((attribute) => populateInputField(attribute))} */}
 
-      {populateInputField(formMapping.attributes["type_of_fileno"])}
-
-      {/* Conditional rendering of file number fields based on type_of_fileno */}
-      {(currentTei.attributes[formMapping.attributes["type_of_fileno"]] ===
-        "TYPE_HPRN" ||
-        currentTei.attributes[formMapping.attributes["type_of_fileno"]] ===
-          "TYPE_BOTH") &&
-        populateInputField(formMapping.attributes["HPRN_no"], true)}
-      {(currentTei.attributes[formMapping.attributes["type_of_fileno"]] ===
-        "TYPE_PAT_FILE" ||
-        currentTei.attributes[formMapping.attributes["type_of_fileno"]] ===
-          "TYPE_BOTH") &&
-        populateInputField(formMapping.attributes["patient_file_no"], true)}
-
-      {populateInputField(formMapping.attributes["identification_type"])}
-
-      {/* Conditional rendering of ID fields based on identification type */}
-      {currentTei.attributes[formMapping.attributes["identification_type"]] ===
-        "ID_TYPE_SA" &&
-        populateInputField(formMapping.attributes["sa_id_number"], true)}
-      {currentTei.attributes[formMapping.attributes["identification_type"]] ===
-        "ID_TYPE_PASSPORT" &&
-        populateInputField(formMapping.attributes["passport_number"], true)}
+     
 
       {renderDOBGroup()}
       {populateInputField(formMapping.attributes["sex"])}
@@ -612,6 +599,24 @@ const Profile = ({
         populateInputField(
           formMapping.attributes["population_group_other_specify"]
         )}
+
+      {populateInputField(formMapping.attributes["address"])}
+
+
+      {populateInputField(formMapping.attributes["type_of_fileno"])}
+
+      {/* Conditional rendering of file number fields based on type_of_fileno */}
+      {(currentTei.attributes[formMapping.attributes["type_of_fileno"]] ===
+        "TYPE_HPRN" ||
+        currentTei.attributes[formMapping.attributes["type_of_fileno"]] ===
+          "TYPE_BOTH") &&
+        populateInputField(formMapping.attributes["HPRN_no"], true)}
+      {(currentTei.attributes[formMapping.attributes["type_of_fileno"]] ===
+        "TYPE_PAT_FILE" ||
+        currentTei.attributes[formMapping.attributes["type_of_fileno"]] ===
+          "TYPE_BOTH") &&
+        populateInputField(formMapping.attributes["patient_file_no"], true)}
+
       {populateInputField(formMapping.attributes["place_of_death"])}
 
       {currentTei.attributes[formMapping.attributes["place_of_death"]] ===
