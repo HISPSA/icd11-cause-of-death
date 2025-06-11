@@ -175,6 +175,43 @@ const Form = ({
                   }}
 
                   onClick={async () => {
+                    // First check type_of_fileno dependent fields
+                    if (currentTei.attributes[formMapping.attributes["type_of_fileno"]]) {
+                      if (currentTei.attributes[formMapping.attributes["type_of_fileno"]] === "TYPE_HPRN" ||
+                          currentTei.attributes[formMapping.attributes["type_of_fileno"]] === "TYPE_BOTH") {
+                        if (!currentTei.attributes[formMapping.attributes["HPRN_no"]]) {
+                          message.error("HPRN number is required!");
+                          return;
+                        }
+                      }
+                      
+                      if (currentTei.attributes[formMapping.attributes["type_of_fileno"]] === "TYPE_PAT_FILE" ||
+                          currentTei.attributes[formMapping.attributes["type_of_fileno"]] === "TYPE_BOTH") {
+                        if (!currentTei.attributes[formMapping.attributes["patient_file_no"]]) {
+                          message.error("Patient file number is required!");
+                          return;
+                        }
+                      }
+                    }
+
+                    // Then check identification_type dependent fields
+                    if (currentTei.attributes[formMapping.attributes["identification_type"]]) {
+                      if (currentTei.attributes[formMapping.attributes["identification_type"]] === "ID_TYPE_SA") {
+                        if (!currentTei.attributes[formMapping.attributes["sa_id_number"]]) {
+                          message.error("SA ID number is required!");
+                          return;
+                        }
+                      }
+                      
+                      if (currentTei.attributes[formMapping.attributes["identification_type"]] === "ID_TYPE_PASSPORT") {
+                        if (!currentTei.attributes[formMapping.attributes["passport_number"]]) {
+                          message.error("Passport number is required!");
+                          return;
+                        }
+                      }
+                    }
+
+                    // Then proceed with existing compulsory field checks
                     if ( 
                       programMetadata.trackedEntityAttributes.filter( ({compulsory}) => compulsory )
                       .every( ({id}) => currentTei.attributes[id] && currentTei.attributes[id] !== "" )
@@ -205,13 +242,12 @@ const Form = ({
                       mutateTei("isDirty", false);
                       mutateEnrollment("isDirty", false);
 
-
                       // Notification
                       setLoading(false);
                       message.success("Profile is saved successfully!")
                     }
                     else {
-                      message.error("All complusory fields must be fill!")
+                      message.error("All compulsory fields must be filled!")
                     }
                   }}
                 >

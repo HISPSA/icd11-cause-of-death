@@ -109,7 +109,7 @@ const Profile = ({
   const getTeaValue = (attribute) =>
     currentTei.attributes[attribute] ? currentTei.attributes[attribute] : "";
 
-  const populateInputField = (attribute) => {
+  const populateInputField = (attribute, forceCompulsory) => {
     const tea = getTeaMetadata(attribute);
     const value = getTeaValue(attribute);
     if (tea) {
@@ -135,7 +135,7 @@ const Profile = ({
             attribute === formMapping.attributes["system_id"] ||
             enrollmentStatus === "COMPLETED"
           }
-          mandatory={tea.compulsory}
+          mandatory={forceCompulsory !== undefined ? forceCompulsory : tea.compulsory}
         />
       );
     }
@@ -575,20 +575,18 @@ const Profile = ({
       {/* Conditional rendering of file number fields based on type_of_fileno */}
       {(currentTei.attributes[formMapping.attributes["type_of_fileno"]] === "TYPE_HPRN" ||
         currentTei.attributes[formMapping.attributes["type_of_fileno"]] === "TYPE_BOTH") &&
-        populateInputField(formMapping.attributes["HPRN_no"])}
+        populateInputField(formMapping.attributes["HPRN_no"], true)}
       {(currentTei.attributes[formMapping.attributes["type_of_fileno"]] === "TYPE_PAT_FILE" ||
         currentTei.attributes[formMapping.attributes["type_of_fileno"]] === "TYPE_BOTH") &&
-        populateInputField(formMapping.attributes["patient_file_no"])}
+        populateInputField(formMapping.attributes["patient_file_no"], true)}
 
       {populateInputField(formMapping.attributes["identification_type"])}
 
       {/* Conditional rendering of ID fields based on identification type */}
-      {currentTei.attributes[formMapping.attributes["identification_type"]] ===
-        "ID_TYPE_SA" &&
-        populateInputField(formMapping.attributes["sa_id_number"])}
-      {currentTei.attributes[formMapping.attributes["identification_type"]] ===
-        "ID_TYPE_PASSPORT" &&
-        populateInputField(formMapping.attributes["passport_number"])}
+      {currentTei.attributes[formMapping.attributes["identification_type"]] === "ID_TYPE_SA" &&
+        populateInputField(formMapping.attributes["sa_id_number"], true)}
+      {currentTei.attributes[formMapping.attributes["identification_type"]] === "ID_TYPE_PASSPORT" &&
+        populateInputField(formMapping.attributes["passport_number"], true)}
 
       {renderDOBGroup()}
       {populateInputField(formMapping.attributes["sex"])}
