@@ -135,7 +135,9 @@ const Profile = ({
             attribute === formMapping.attributes["system_id"] ||
             enrollmentStatus === "COMPLETED"
           }
-          mandatory={forceCompulsory !== undefined ? forceCompulsory : tea.compulsory}
+          mandatory={
+            forceCompulsory !== undefined ? forceCompulsory : tea.compulsory
+          }
         />
       );
     }
@@ -573,19 +575,25 @@ const Profile = ({
       {populateInputField(formMapping.attributes["type_of_fileno"])}
 
       {/* Conditional rendering of file number fields based on type_of_fileno */}
-      {(currentTei.attributes[formMapping.attributes["type_of_fileno"]] === "TYPE_HPRN" ||
-        currentTei.attributes[formMapping.attributes["type_of_fileno"]] === "TYPE_BOTH") &&
+      {(currentTei.attributes[formMapping.attributes["type_of_fileno"]] ===
+        "TYPE_HPRN" ||
+        currentTei.attributes[formMapping.attributes["type_of_fileno"]] ===
+          "TYPE_BOTH") &&
         populateInputField(formMapping.attributes["HPRN_no"], true)}
-      {(currentTei.attributes[formMapping.attributes["type_of_fileno"]] === "TYPE_PAT_FILE" ||
-        currentTei.attributes[formMapping.attributes["type_of_fileno"]] === "TYPE_BOTH") &&
+      {(currentTei.attributes[formMapping.attributes["type_of_fileno"]] ===
+        "TYPE_PAT_FILE" ||
+        currentTei.attributes[formMapping.attributes["type_of_fileno"]] ===
+          "TYPE_BOTH") &&
         populateInputField(formMapping.attributes["patient_file_no"], true)}
 
       {populateInputField(formMapping.attributes["identification_type"])}
 
       {/* Conditional rendering of ID fields based on identification type */}
-      {currentTei.attributes[formMapping.attributes["identification_type"]] === "ID_TYPE_SA" &&
+      {currentTei.attributes[formMapping.attributes["identification_type"]] ===
+        "ID_TYPE_SA" &&
         populateInputField(formMapping.attributes["sa_id_number"], true)}
-      {currentTei.attributes[formMapping.attributes["identification_type"]] === "ID_TYPE_PASSPORT" &&
+      {currentTei.attributes[formMapping.attributes["identification_type"]] ===
+        "ID_TYPE_PASSPORT" &&
         populateInputField(formMapping.attributes["passport_number"], true)}
 
       {renderDOBGroup()}
@@ -598,13 +606,20 @@ const Profile = ({
       {fullnameOption !== "noname" &&
         populateInputField(formMapping.attributes["given_name"])}
       {populateInputField(formMapping.attributes["population_group"])}
-      {populateInputField(
-        formMapping.attributes["population_group_other_specify"]
-      )}
+
+      {currentTei.attributes[formMapping.attributes["population_group"]] ===
+        "POP_GROUP_OTHER" &&
+        populateInputField(
+          formMapping.attributes["population_group_other_specify"]
+        )}
       {populateInputField(formMapping.attributes["place_of_death"])}
-      {populateInputField(
-        formMapping.attributes["place_of_death_other_specify"]
-      )}
+
+      {currentTei.attributes[formMapping.attributes["place_of_death"]] ===
+        "PLACE_DEATH_OTHER_PLACE" &&
+        populateInputField(
+          formMapping.attributes["place_of_death_other_specify"]
+        )}
+
       {populateInputField(
         formMapping.attributes["name_of_health_facility_practice"]
       )}
