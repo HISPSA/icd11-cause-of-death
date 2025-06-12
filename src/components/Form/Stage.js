@@ -42,13 +42,12 @@ const Stage = ({
   const [timeToDeath, setTimeToDeath] = useState(null);
   const [timeToDeathModal, setTimeToDeathModal] = useState(false);
 
-  const [deathType, setDeathType] = useState("afterOneWeek"); // "afterOneWeek" or "withinOneWeek"
-
   const {
     currentEnrollment,
     currentTei: { attributes },
     currentEnrollment: { enrollmentDate: currentTeiDateOfDeath },
     currentEnrollment: { status: enrollmentStatus },
+    currentEvents,
   } = data;
   const {
     programMetadata,
@@ -63,6 +62,84 @@ const Stage = ({
     attributes[formMapping.attributes["dob"]];
   const currentTeiAgeAttributeValue = attributes[formMapping.attributes["age"]];
 
+  const currentEvent = currentEvents.find((event) => {
+    return event.programStage === formMapping.programStage;
+  });
+
+  // Add useEffect for mother's SA ID processing
+  useEffect(() => {
+    if (!currentEvent) return;
+
+    const motherIdNumber =
+      currentEvent.dataValues[
+        formMapping.dataElements["mother_identity_number"]
+      ];
+    const motherIdType =
+      currentEvent.dataValues[
+        formMapping.dataElements["mother_identification_type"]
+      ];
+
+    // Only process if we have a complete 13-digit ID number and correct ID type
+    if (
+      motherIdType === "ID_TYPE_SA" &&
+      motherIdNumber &&
+      motherIdNumber.length === 13 &&
+      /^\d+$/.test(motherIdNumber)
+    ) {
+      try {
+        const year = parseInt(motherIdNumber.substring(0, 2));
+        const month = motherIdNumber.substring(2, 4);
+        const day = motherIdNumber.substring(4, 6);
+
+        // Validate month and day
+        if (parseInt(month) < 1 || parseInt(month) > 12) {
+          return;
+        }
+        if (parseInt(day) < 1 || parseInt(day) > 31) {
+          return;
+        }
+
+        // Determine full year (assuming 1900s for now)
+        const fullYear = year < 50 ? 2000 + year : 1900 + year;
+
+        // Create date string in YYYY-MM-DD format
+        const dob = `${fullYear}-${month}-${day}`;
+
+        // Validate if it's a valid date
+        if (moment(dob, "YYYY-MM-DD", true).isValid()) {
+          // Update the mother's DOB field
+          mutateDataValue(
+            currentEvent.event,
+            formMapping.dataElements["mother_dob"],
+            dob
+          );
+
+          // Calculate and update mother's age
+          const age = moment().diff(moment(dob), "years");
+          if (age >= 0 && age <= 150) {
+            mutateDataValue(
+              currentEvent.event,
+              formMapping.dataElements["mother_age"],
+              age.toString()
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Error processing mother's SA ID:", error);
+      }
+    } else if (motherIdType === "ID_TYPE_SA" && motherIdNumber) {
+      if (motherIdNumber.length !== 13) {
+        console.log("ID number must be 13 digits");
+      } else if (!/^\d+$/.test(motherIdNumber)) {
+        console.log("ID number must contain only digits");
+      }
+    }
+  }, [
+    currentEvent?.dataValues[
+      formMapping.dataElements["mother_identity_number"]
+    ],
+  ]);
+
   const age = currentTeiAgeAttributeValue
     ? currentTeiAgeAttributeValue
     : Math.abs(
@@ -75,9 +152,6 @@ const Stage = ({
   const programStage = programMetadata.programStages.find(
     (ps) => ps.id === formMapping.programStage
   );
-  const currentEvent = data.currentEvents.find((event) => {
-    return event.programStage === formMapping.programStage;
-  });
   const returnInitValue = (de) => {
     return currentEvent
       ? currentEvent.dataValues[de]
@@ -363,6 +437,21 @@ const Stage = ({
       return null;
     }
     let disable = false;
+
+    // Disable DOB and age fields if using ID number
+    if (
+      currentEvent?.dataValues[
+        formMapping.dataElements["mother_identification_type"]
+      ] === "ID_TYPE_SA" &&
+      currentEvent?.dataValues[
+        formMapping.dataElements["mother_identity_number"]
+      ]?.length === 13 &&
+      (de === formMapping.dataElements["mother_dob"] ||
+        de === formMapping.dataElements["mother_age"])
+    ) {
+      disable = true;
+    }
+
     if (
       currentEvent &&
       de === formMapping.dataElements["reason_of_manual_COD_selection"] &&
@@ -420,98 +509,112 @@ const Stage = ({
       }
     }
     return (
-      <InputField
-        value={
-          currentEvent && currentEvent.dataValues[de]
-            ? currentEvent.dataValues[de]
-            : de === formMapping.dataElements["underlyingCOD_processed_by"]
-            ? "DORIS"
-            : ""
-        }
-        change={(value) => {
-          // check if input is underlying checkbox
-          if (extraFunction) {
-            let currentCauseOfDeath = causeOfDeaths;
-            let id = null;
-            switch (de) {
-              case formMapping.dataElements["codA_underlying"]:
-                id = formMapping.dataElements["codA"];
-                break;
-              case formMapping.dataElements["codB_underlying"]:
-                id = formMapping.dataElements["codB"];
-                break;
-              case formMapping.dataElements["codC_underlying"]:
-                id = formMapping.dataElements["codC"];
-                break;
-              case formMapping.dataElements["codD_underlying"]:
-                id = formMapping.dataElements["codD"];
-                break;
-              case formMapping.dataElements["codO_underlying"]:
-                id = formMapping.dataElements["codO"];
-                break;
-              default:
-                break;
-            }
-
-            // set underlying
-            if (value) {
-              if (currentCauseOfDeath[id].code.split(",").length === 1) {
-                setUnderlyingResult(
-                  currentCauseOfDeath[id].code.split(" (")[0]
-                );
-              } else {
-                setUnderlyingSelections(
-                  currentCauseOfDeath[id].code.split(",").map((selection) => ({
-                    label: `${selection} - ${
-                      icd11Options.find(
-                        ({ code }) => code === selection.split(" (")[0]
-                      )?.name
-                    }`,
-                    value: selection.split(" (")[0],
-                  }))
-                );
-                setUnderlyingModal(true);
+      <div>
+        <InputField
+          value={
+            currentEvent && currentEvent.dataValues[de]
+              ? currentEvent.dataValues[de]
+              : de === formMapping.dataElements["underlyingCOD_processed_by"]
+              ? "DORIS"
+              : ""
+          }
+          change={(value) => {
+            // Add validation for mother's SA ID number
+            if (de === formMapping.dataElements["mother_identity_number"]) {
+              // Only allow numbers and limit to 13 digits
+              const numericValue = value.replace(/[^0-9]/g, "");
+              if (numericValue.length <= 13) {
+                mutateDataValue(currentEvent.event, de, numericValue);
               }
             } else {
-              setUnderlyingResult("");
-              setUnderlyingSelections([]);
-            }
+              // check if input is underlying checkbox
+              if (extraFunction) {
+                let currentCauseOfDeath = causeOfDeaths;
+                let id = null;
+                switch (de) {
+                  case formMapping.dataElements["codA_underlying"]:
+                    id = formMapping.dataElements["codA"];
+                    break;
+                  case formMapping.dataElements["codB_underlying"]:
+                    id = formMapping.dataElements["codB"];
+                    break;
+                  case formMapping.dataElements["codC_underlying"]:
+                    id = formMapping.dataElements["codC"];
+                    break;
+                  case formMapping.dataElements["codD_underlying"]:
+                    id = formMapping.dataElements["codD"];
+                    break;
+                  case formMapping.dataElements["codO_underlying"]:
+                    id = formMapping.dataElements["codO"];
+                    break;
+                  default:
+                    break;
+                }
 
-            if (id) {
-              for (const [key, val] of Object.entries(currentCauseOfDeath)) {
-                if (key === id) {
-                  val.underlying = value;
+                // set underlying
+                if (value) {
+                  if (currentCauseOfDeath[id].code.split(",").length === 1) {
+                    setUnderlyingResult(
+                      currentCauseOfDeath[id].code.split(" (")[0]
+                    );
+                  } else {
+                    setUnderlyingSelections(
+                      currentCauseOfDeath[id].code
+                        .split(",")
+                        .map((selection) => ({
+                          label: `${selection} - ${
+                            icd11Options.find(
+                              ({ code }) => code === selection.split(" (")[0]
+                            )?.name
+                          }`,
+                          value: selection.split(" (")[0],
+                        }))
+                    );
+                    setUnderlyingModal(true);
+                  }
                 } else {
-                  val.underlying = false;
+                  setUnderlyingResult("");
+                  setUnderlyingSelections([]);
+                }
+
+                if (id) {
+                  for (const [key, val] of Object.entries(
+                    currentCauseOfDeath
+                  )) {
+                    if (key === id) {
+                      val.underlying = value;
+                    } else {
+                      val.underlying = false;
+                    }
+                  }
+
+                  setCauseOfDeaths({
+                    ...causeOfDeaths,
+                    ...currentCauseOfDeath,
+                  });
                 }
               }
-
-              setCauseOfDeaths({
-                ...causeOfDeaths,
-                ...currentCauseOfDeath,
-              });
+              // set DORIS
+              if (
+                currentEvent &&
+                de === formMapping.dataElements["underlyingCOD_processed_by"] &&
+                value === "DORIS"
+              ) {
+                mutateDataValue(
+                  currentEvent.event,
+                  formMapping.dataElements["reason_of_manual_COD_selection"],
+                  ""
+                );
+              }
+              mutateDataValue(currentEvent.event, de, value);
             }
-          }
-          // set DORIS
-          if (
-            currentEvent &&
-            de === formMapping.dataElements["underlyingCOD_processed_by"] &&
-            value === "DORIS"
-          ) {
-            mutateDataValue(
-              currentEvent.event,
-              formMapping.dataElements["reason_of_manual_COD_selection"],
-              ""
-            );
-          }
-          mutateDataValue(currentEvent.event, de, value);
-        }}
-        valueType={foundDe.valueType}
-        // label={foundDe.displayFormName}
-        valueSet={foundDe.valueSet}
-        disabled={disable || enrollmentStatus === "COMPLETED"}
-        placeholder={placeholder}
-      />
+          }}
+          valueType={foundDe.valueType}
+          valueSet={foundDe.valueSet}
+          disabled={disable || enrollmentStatus === "COMPLETED"}
+          placeholder={placeholder}
+        />
+      </div>
     );
   };
 
@@ -1385,28 +1488,16 @@ const Stage = ({
           <TabPane tab="Frame A" key="a"> */}
         {/* <div className="tab-container"> */}
         <div className="stage-section">
-          <div className="stage-section-title">Death Timing</div>
+          <div className="stage-section-title">Period of death</div>
           <div className="stage-section-content">
-            <InputField
-              valueType="TEXT"
-              valueSet={[
-                {
-                  label: "Death occurred after one week of birth (G1)",
-                  value: "afterOneWeek",
-                },
-                {
-                  label: "Death occurred within one week of birth (G2)",
-                  value: "withinOneWeek",
-                },
-              ]}
-              value={deathType}
-              change={setDeathType}
-            />
+            {renderInputField(formMapping.dataElements["period_of_death"])}
           </div>
         </div>
 
         {/* G1 Section: Medical Data */}
-        {deathType === "afterOneWeek" && (
+        {currentEvent.dataValues[
+          formMapping.dataElements["period_of_death"]
+        ] === "TIMING_AFTER_WEEK" && (
           <>
             <div className="stage-section">
               <div className="stage-section-title">G1: Medical Data</div>
@@ -1841,6 +1932,38 @@ const Stage = ({
                           backgroundColor: "#f5f5f5",
                         }}
                       >
+                        <strong>DORIS tool:</strong>
+                        <Button
+                          onClick={() => {
+                            detectUnderlyingCauseOfDeath();
+                          }}
+                          disabled={
+                            (currentEvent &&
+                              currentEvent.dataValues[
+                                formMapping.dataElements[
+                                  "underlyingCOD_processed_by"
+                                ]
+                              ] &&
+                              currentEvent.dataValues[
+                                formMapping.dataElements[
+                                  "underlyingCOD_processed_by"
+                                ]
+                              ] === "Manual") ||
+                            enrollmentStatus === "COMPLETED"
+                          }
+                        >
+                          {t("compute")}
+                        </Button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        colSpan="2"
+                        style={{
+                          backgroundColor: "#f5f5f5",
+                          textAlign: "right",
+                        }}
+                      >
                         Reason for Manual Code:
                         {renderInputField(
                           formMapping.dataElements[
@@ -1855,7 +1978,9 @@ const Stage = ({
             </div>
 
             {/* New Pregnancy Status Section for G1 */}
-            {deathType === "afterOneWeek" &&
+            {currentEvent.dataValues[
+              formMapping.dataElements["period_of_death"]
+            ] === "TIMING_AFTER_WEEK" &&
               currentTeiSexAttributeValue === femaleCode && (
                 <div className="stage-section">
                   <div className="stage-section-title">Pregnancy Status</div>
@@ -1885,263 +2010,362 @@ const Stage = ({
                   </div>
                 </div>
               )}
+
+            <div className="stage-section">
+              <div className="stage-section-title">
+                Method and Autopsy Information
+              </div>
+              <div className="stage-section-content">
+                <div style={{ marginBottom: "20px" }}>
+                  <div style={{ fontWeight: "bold", marginBottom: "8px" }}>
+                    Method used to ascertain cause of death
+                  </div>
+                  {renderInputField(
+                    formMapping.dataElements[
+                      "method_to_ascertain_cause_of_death"
+                    ]
+                  )}
+                </div>
+                {currentEvent?.dataValues[
+                  formMapping.dataElements["method_to_ascertain_cause_of_death"]
+                ] === "METHOD_AUTOPSY" && (
+                  <div>
+                    <div style={{ fontWeight: "bold", marginBottom: "8px" }}>
+                      Autopsy information
+                    </div>
+                    {renderInputField(formMapping.dataElements["autopsy_info"])}
+                  </div>
+                )}
+
+                {currentEvent?.dataValues[
+                  formMapping.dataElements["method_to_ascertain_cause_of_death"]
+                ] === "METHOD_OTHER" && (
+                  <div>
+                    <div style={{ fontWeight: "bold", marginBottom: "8px" }}>
+                      Other methid (specify)
+                    </div>
+                    {renderInputField(
+                      formMapping.dataElements[
+                        "method_to_ascertain_cause_of_death_other"
+                      ]
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </>
         )}
         {/* G2 Section: Perinatal Death */}
-        {deathType === "withinOneWeek" && (
+        {currentEvent.dataValues[
+          formMapping.dataElements["period_of_death"]
+        ] === "TIMING_WITHIN_WEEK" && (
           <div className="stage-section">
             <div className="stage-section-title">G2: Perinatal Death</div>
             <div style={{ display: "flex", gap: "20px" }}>
               {/* Left Column - Mother Section */}
-              <div style={{ flex: 1 }}>
-                <div className="stage-section-subtitle">Mother</div>
-                <table
-                  className="perinatal-mother-table"
+              <div className="mother" style={{ flex: 1 }}>
+                <div className="stage-section-subtitle">
+                  <strong>Mother</strong>
+                </div>
+                <div
+                  className="perinatal-mother-section"
                   style={{ width: "100%" }}
                 >
-                  <tbody>
-                    <tr>
-                      <td style={{ fontWeight: "bold" }}>Identity Number</td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: "100%" }}>
+                  <div className="form-field">
+                    <div className="field-label" style={{ fontWeight: "bold" }}>
+                      Identification Type
+                    </div>
+                    <div className="field-input">
+                      {renderInputField(
+                        formMapping.dataElements["mother_identification_type"]
+                      )}
+                    </div>
+                  </div>
+
+                  {currentEvent?.dataValues[
+                    formMapping.dataElements["mother_identification_type"]
+                  ] === "ID_TYPE_SA" && (
+                    <div className="form-field">
+                      <div
+                        className="field-label"
+                        style={{ fontWeight: "bold" }}
+                      >
+                        Identity Number
+                      </div>
+                      <div className="field-input">
                         {renderInputField(
                           formMapping.dataElements["mother_identity_number"]
                         )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: "bold" }}>Date of Birth</td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: "100%" }}>
+                      </div>
+                    </div>
+                  )}
+
+                  {currentEvent?.dataValues[
+                    formMapping.dataElements["mother_identification_type"]
+                  ] === "ID_TYPE_PASSPORT" && (
+                    <div className="form-field">
+                      <div
+                        className="field-label"
+                        style={{ fontWeight: "bold" }}
+                      >
+                        Passport Number
+                      </div>
+                      <div className="field-input">
                         {renderInputField(
-                          formMapping.dataElements["mother_dob"]
+                          formMapping.dataElements["mother_passport_no"]
                         )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: "bold" }}>
-                        Age of last birthday/DoB unknown
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: "100%" }}>
-                        {renderInputField(
-                          formMapping.dataElements["mother_age"]
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: "bold" }}>
-                        Number of previous pregnancies - Live births
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: "100%" }}>
-                        {renderInputField(
-                          formMapping.dataElements["live_births"]
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: "bold" }}>
-                        Number of previous pregnancies - Still births
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: "100%" }}>
-                        {renderInputField(
-                          formMapping.dataElements["still_births"]
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: "bold" }}>
-                        Number of previous pregnancies - Abortions
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: "100%" }}>
-                        {renderInputField(
-                          formMapping.dataElements["g2_mother_prev_abortions"]
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: "bold" }}>
-                        Outcome of last previous pregnancy
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: "100%" }}>
-                        {renderInputField(
-                          formMapping.dataElements["last_preg_outcome"]
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: "bold" }}>
-                        Date of last previous delivery
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: "100%" }}>
-                        {renderInputField(
-                          formMapping.dataElements["previous_delivery_date"]
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: "bold" }}>
-                        First day of last menstrual period
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: "100%" }}>
-                        {renderInputField(
-                          formMapping.dataElements[
-                            "first_day_of_last_menstrual"
-                          ]
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: "bold" }}>
-                        Estimated duration of pregnancy (weeks)
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: "100%" }}>
-                        {renderInputField(
-                          formMapping.dataElements["preg_duration"]
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: "bold" }}>Method of delivery</td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: "100%" }}>
-                        {renderInputField(
-                          formMapping.dataElements["delivery_method"]
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: "bold" }}>
-                        Antenatal care two or more visits
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: "100%" }}>
-                        {renderInputField(
-                          formMapping.dataElements["antenatal_visits"]
-                        )}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="form-field">
+                    <div className="field-label" style={{ fontWeight: "bold" }}>
+                      Date of Birth
+                    </div>
+                    <div className="field-input">
+                      {renderInputField(formMapping.dataElements["mother_dob"])}
+                    </div>
+                  </div>
+
+                  <div className="form-field">
+                    <div className="field-label" style={{ fontWeight: "bold" }}>
+                      Age of last birthday
+                    </div>
+                    <div className="field-input">
+                      {renderInputField(formMapping.dataElements["mother_age"])}
+                    </div>
+                  </div>
+
+                  <div>
+                     <div
+                        className="field-label"
+                        style={{ fontWeight: "bold" }}
+                      >
+                        Number of previous pregnancies resulting in:
+                      </div>
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      <div className="form-field">
+                        <div
+                          className="field-label"
+                          style={{ fontWeight: "bold" }}
+                        >
+                          Live births
+                        </div>
+                        <div className="field-input">
+                          {renderInputField(
+                            formMapping.dataElements["live_births"]
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="form-field">
+                        <div
+                          className="field-label"
+                          style={{ fontWeight: "bold" }}
+                        >
+                          Still births
+                        </div>
+                        <div className="field-input">
+                          {renderInputField(
+                            formMapping.dataElements["still_births"]
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="form-field">
+                        <div
+                          className="field-label"
+                          style={{ fontWeight: "bold" }}
+                        >
+                          Abortions
+                        </div>
+                        <div className="field-input">
+                          {renderInputField(
+                            formMapping.dataElements["abortions"]
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="form-field">
+                    <div className="field-label" style={{ fontWeight: "bold" }}>
+                      Outcome of last previous pregnancy
+                    </div>
+                    <div className="field-input">
+                      {renderInputField(
+                        formMapping.dataElements["last_preg_outcome"]
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="form-field">
+                    <div className="field-label" style={{ fontWeight: "bold" }}>
+                      Date of last previous delivery
+                    </div>
+                    <div className="field-input">
+                      {renderInputField(
+                        formMapping.dataElements["previous_delivery_date"]
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="form-field">
+                    <div className="field-label" style={{ fontWeight: "bold" }}>
+                      First day of last menstrual period
+                    </div>
+                    <div className="field-input">
+                      {renderInputField(
+                        formMapping.dataElements["first_day_of_last_menstrual"]
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="form-field">
+                    <div className="field-label" style={{ fontWeight: "bold" }}>
+                      Estimated duration of pregnancy (weeks)
+                    </div>
+                    <div className="field-input">
+                      {renderInputField(
+                        formMapping.dataElements["preg_duration"]
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="form-field">
+                    <div className="field-label" style={{ fontWeight: "bold" }}>
+                      Method of delivery
+                    </div>
+                    <div className="field-input">
+                      {renderInputField(
+                        formMapping.dataElements["delivery_method"]
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="form-field">
+                    <div className="field-label" style={{ fontWeight: "bold" }}>
+                      Antenatal care two or more visits
+                    </div>
+                    <div className="field-input">
+                      {renderInputField(
+                        formMapping.dataElements["antenatal_visits"]
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Right Column - Child Section */}
-              <div style={{ flex: 1 }}>
-                <div className="stage-section-subtitle">Child</div>
-                <table
-                  className="perinatal-child-table"
+              <div style={{ flex: 1 }} className="child">
+                <div className="stage-section-subtitle">
+                  <strong>Child</strong>
+                </div>
+                <div
+                  className="perinatal-child-section"
                   style={{ width: "100%" }}
                 >
-                  <tbody>
-                    <tr>
-                      <td style={{ fontWeight: "bold" }}>Type of death</td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: "100%" }}>
-                        {renderInputField(
-                          formMapping.dataElements["child_type_of_death"]
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: "bold" }}>
-                        Birth weight (grams)
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: "100%" }}>
-                        {renderInputField(
-                          formMapping.dataElements["birth_weight"]
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: "bold" }}>This birth was</td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: "100%" }}>
-                        {renderInputField(
-                          formMapping.dataElements["child_birth_type"]
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: "bold" }}>
-                        Was this a still born
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: "100%" }}>
-                        {renderInputField(
-                          formMapping.dataElements["stillborn"]
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: "bold" }}>
-                        If stillborn, heartbeat ceased
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: "100%" }}>
+                  <div className="form-field">
+                    <div className="field-label" style={{ fontWeight: "bold" }}>
+                      Type of death
+                    </div>
+                    <div className="field-input">
+                      {renderInputField(
+                        formMapping.dataElements["child_type_of_death"]
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="form-field">
+                    <div className="field-label" style={{ fontWeight: "bold" }}>
+                      Birth weight (grams)
+                    </div>
+                    <div className="field-input">
+                      {renderInputField(
+                        formMapping.dataElements["birth_weight"]
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="form-field">
+                    <div className="field-label" style={{ fontWeight: "bold" }}>
+                      This birth was
+                    </div>
+                    <div className="field-input">
+                      {renderInputField(
+                        formMapping.dataElements["child_birth_type"]
+                      )}
+                    </div>
+                  </div>
+
+                  {currentEvent?.dataValues[
+                    formMapping.dataElements["child_type_of_death"]
+                  ] === "TYPE_DEATH_STILL" && (
+                    <div className="form-field">
+                      <div
+                        className="field-label"
+                        style={{ fontWeight: "bold" }}
+                      >
+                        if still born, did heartbeat ceased:
+                      </div>
+                      <div className="field-input">
                         {renderInputField(
                           formMapping.dataElements["heartbeat_ceased_type"]
                         )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: "bold" }}>
+                      </div>
+                    </div>
+                  )}
+
+                  {currentEvent?.dataValues[
+                    formMapping.dataElements["child_type_of_death"]
+                  ] === "TYPE_DEATH_LIVE" && (
+                    <div className="form-field">
+                      <div
+                        className="field-label"
+                        style={{ fontWeight: "bold" }}
+                      >
                         If death occurred within 24h, number of hours alive
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: "100%" }}>
+                      </div>
+                      <div className="field-input">
                         {renderInputField(
                           formMapping.dataElements["hours_newborn_survived"]
                         )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: "bold" }}>Attendant at birth</td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: "100%" }}>
-                        {renderInputField(
-                          formMapping.dataElements["attendant_at_birth"]
-                        )}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: "bold" }}>Other Attendant</td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: "100%" }}>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="form-field">
+                    <div className="field-label" style={{ fontWeight: "bold" }}>
+                      Attendant at birth
+                    </div>
+                    <div className="field-input">
+                      {renderInputField(
+                        formMapping.dataElements["attendant_at_birth"]
+                      )}
+                    </div>
+                  </div>
+
+                  {(currentEvent?.dataValues[
+                    formMapping.dataElements["attendant_at_birth"]
+                  ] === "ATTD_OTHER" ||
+                    currentEvent?.dataValues[
+                      formMapping.dataElements["attendant_at_birth"]
+                    ] === "ATTD_OTHER_PERS") && (
+                    <div className="form-field">
+                      <div
+                        className="field-label"
+                        style={{ fontWeight: "bold" }}
+                      >
+                        Other Attendant
+                      </div>
+                      <div className="field-input">
                         {renderInputField(
                           formMapping.dataElements["attendant_at_birth_other"]
                         )}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -2541,29 +2765,6 @@ const Stage = ({
                 </table>
               </div>
             </div>
-
-            {/* Pregnancy Status Section for G2 - Only for females */}
-            {currentTeiSexAttributeValue === femaleCode && (
-              <div className="stage-section" style={{ marginTop: "20px" }}>
-                <div className="stage-section-title">Pregnancy Status</div>
-                <div className="stage-section-content">
-                  <table className="pregnancy-status-table">
-                    <tbody>
-                      <tr>
-                        <td style={{ width: "90%" }}>
-                          Was she pregnant at the time of death or up to 42 days prior to death
-                          <div>
-                            {renderInputField(
-                              formMapping.dataElements["pregnant_at_time_of_birth"]
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
           </div>
         )}
         {/* Manner of Death section - Now outside both G1 and G2 */}

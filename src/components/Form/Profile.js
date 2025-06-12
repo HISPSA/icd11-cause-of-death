@@ -427,17 +427,7 @@ const Profile = ({
       {populateInputField(formMapping.attributes["system_id"])}
       {populateInputField(formMapping.attributes["barcode_number"])}
 
-       {populateInputField(formMapping.attributes["identification_type"])}
-
-      {/* Conditional rendering of ID fields based on identification type */}
-      {currentTei.attributes[formMapping.attributes["identification_type"]] ===
-        "ID_TYPE_SA" &&
-        populateInputField(formMapping.attributes["sa_id_number"], true)}
-      {currentTei.attributes[formMapping.attributes["identification_type"]] ===
-        "ID_TYPE_PASSPORT" &&
-        populateInputField(formMapping.attributes["passport_number"], true)}
-
-      <InputField
+        <InputField
         value={currentEnrollment.incidentDate || ""}
         label={t("incidentDate")}
         valueType={"DATE_WITH_RANGE"}
@@ -577,6 +567,18 @@ const Profile = ({
         mandatory={true}
       />
 
+       {populateInputField(formMapping.attributes["identification_type"])}
+
+      {/* Conditional rendering of ID fields based on identification type */}
+      {currentTei.attributes[formMapping.attributes["identification_type"]] ===
+        "ID_TYPE_SA" &&
+        populateInputField(formMapping.attributes["sa_id_number"], true)}
+      {currentTei.attributes[formMapping.attributes["identification_type"]] ===
+        "ID_TYPE_PASSPORT" &&
+        populateInputField(formMapping.attributes["passport_number"], true)}
+
+    
+
       {/* {attributes
         .slice(0, 3)
         .map((attribute) => populateInputField(attribute))} */}
@@ -640,7 +642,6 @@ const Profile = ({
         formMapping.attributes["facility_contact_person_role_rank"]
       )}
 
-      {populateInputField(formMapping.attributes["notification_date"])}
 
       {/* For other attributes */}
       {programMetadata.trackedEntityAttributes

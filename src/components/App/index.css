@@ -11,3 +11,12 @@
   width: 100%;
   height: calc(100% - 48px);
 }
+
+
+
+.stage-section-subtitle{
+  font-size: 18px;
+   color: #4c76ba;
+  font-weight: bold;
+  font-size: 15px;
+}

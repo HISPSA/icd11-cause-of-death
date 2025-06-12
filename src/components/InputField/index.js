@@ -61,7 +61,7 @@ const InputField = (props) => {
           value={value}
           allowClear
           showSearch
-          style={style ? style : { width: "100%", maxWidth: "410px", textAlign: "left" }}
+          style={style ? style : { width: "100%", textAlign: "left" }}
           onChange={(selected) => {
             change(selected);
           }}
@@ -138,7 +138,7 @@ const InputField = (props) => {
               }
             }}
             disabled={disabled}
-            style={style}
+            style={{ width: "100%", textAlign: "left" }}
           />
         );
       case "DATE_WITH_RANGE":
@@ -155,7 +155,7 @@ const InputField = (props) => {
             }}
             disabledDate={disabledDate}
             disabled={disabled}
-            style={style ? style : { width: "100%", maxWidth: "410px", textAlign: "left" }}
+            style={{ width: "100%", textAlign: "left" }}
           />
         );
       case "DATETIME":
@@ -197,6 +197,7 @@ const InputField = (props) => {
               change(momentObject);
             }}
             disabled={disabled}
+            style={{ width: "100%", textAlign: "left" }}
           />
         );
       default:
