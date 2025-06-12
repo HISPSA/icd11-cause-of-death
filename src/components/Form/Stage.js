@@ -35,7 +35,6 @@ const Stage = ({
   const [causeOfDeaths, setCauseOfDeaths] = useState(null);
   const [checkBoxUnderlying, setCheckBoxUnderlying] = useState("");
   const [flagUnderlying, setFlagUnderlying] = useState(false);
-  const [motherIdError, setMotherIdError] = useState("");
 
   const [underlyingSelections, setUnderlyingSelections] = useState([]);
   const [underlyingResult, setUnderlyingResult] = useState("");
@@ -74,8 +73,6 @@ const Stage = ({
     const motherIdNumber = currentEvent.dataValues[formMapping.dataElements["mother_identity_number"]];
     const motherIdType = currentEvent.dataValues[formMapping.dataElements["mother_identification_type"]];
 
-    // Reset error state
-    setMotherIdError("");
 
     // Only process if we have a complete 13-digit ID number and correct ID type
     if (
@@ -91,11 +88,9 @@ const Stage = ({
 
         // Validate month and day
         if (parseInt(month) < 1 || parseInt(month) > 12) {
-          setMotherIdError("Invalid month in ID number");
           return;
         }
         if (parseInt(day) < 1 || parseInt(day) > 31) {
-          setMotherIdError("Invalid day in ID number");
           return;
         }
 
@@ -114,21 +109,16 @@ const Stage = ({
           const age = moment().diff(moment(dob), "years");
           if (age >= 0 && age <= 150) {
             mutateDataValue(currentEvent.event, formMapping.dataElements["mother_age"], age.toString());
-          } else {
-            setMotherIdError("Invalid age calculated from ID number");
-          }
-        } else {
-          setMotherIdError("Invalid date in ID number");
-        }
+          } 
+        } 
       } catch (error) {
         console.error("Error processing mother's SA ID:", error);
-        setMotherIdError("Error processing ID number");
       }
     } else if (motherIdType === "ID_TYPE_SA" && motherIdNumber) {
       if (motherIdNumber.length !== 13) {
-        setMotherIdError("ID number must be 13 digits");
+        console.log("ID number must be 13 digits");
       } else if (!/^\d+$/.test(motherIdNumber)) {
-        setMotherIdError("ID number must contain only digits");
+        console.log("ID number must contain only digits");
       }
     }
   }, [currentEvent?.dataValues[formMapping.dataElements["mother_identity_number"]]]);
@@ -598,11 +588,7 @@ const Stage = ({
           disabled={disable || enrollmentStatus === "COMPLETED"}
           placeholder={placeholder}
         />
-        {de === formMapping.dataElements["mother_identity_number"] && motherIdError && (
-          <div style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
-            {motherIdError}
-          </div>
-        )}
+       
       </div>
     );
   };
@@ -2031,7 +2017,9 @@ const Stage = ({
             <div style={{ display: "flex", gap: "20px" }}>
               {/* Left Column - Mother Section */}
               <div style={{ flex: 1 }}>
-                <div className="stage-section-subtitle">Mother</div>
+                <div className="stage-section-subtitle">
+               <strong>Mother</strong>   
+                  </div>
                 <table
                   className="perinatal-mother-table"
                   style={{ width: "100%" }}
@@ -2211,7 +2199,7 @@ const Stage = ({
 
               {/* Right Column - Child Section */}
               <div style={{ flex: 1 }}>
-                <div className="stage-section-subtitle">Child</div>
+                <div className="stage-section-subtitle" > <strong> Child</strong></div>
                 <table
                   className="perinatal-child-table"
                   style={{ width: "100%" }}
