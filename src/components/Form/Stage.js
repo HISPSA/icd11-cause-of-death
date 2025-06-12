@@ -42,7 +42,6 @@ const Stage = ({
   const [timeToDeath, setTimeToDeath] = useState(null);
   const [timeToDeathModal, setTimeToDeathModal] = useState(false);
 
-  const [deathType, setDeathType] = useState("afterOneWeek"); // "afterOneWeek" or "withinOneWeek"
 
   const {
     currentEnrollment,
@@ -1385,28 +1384,41 @@ const Stage = ({
           <TabPane tab="Frame A" key="a"> */}
         {/* <div className="tab-container"> */}
         <div className="stage-section">
-          <div className="stage-section-title">Death Timing</div>
+          <div className="stage-section-title">Period of death</div>
           <div className="stage-section-content">
-            <InputField
-              valueType="TEXT"
-              valueSet={[
-                {
-                  label: "Death occurred after one week of birth (G1)",
-                  value: "afterOneWeek",
-                },
-                {
-                  label: "Death occurred within one week of birth (G2)",
-                  value: "withinOneWeek",
-                },
-              ]}
-              value={deathType}
-              change={setDeathType}
-            />
+            {renderInputField(formMapping.dataElements["period_of_death"])}
+          </div>
+        </div>
+
+        <div className="stage-section">
+          <div className="stage-section-title">
+            Method and Autopsy Information
+          </div>
+          <div className="stage-section-content">
+            <div style={{ marginBottom: "20px" }}>
+              <div style={{ fontWeight: "bold", marginBottom: "8px" }}>
+                Method used to ascertain cause of death
+              </div>
+              {renderInputField(
+                formMapping.dataElements["method_to_ascertain_cause_of_death"]
+              )}
+          
+            </div>
+            {currentEvent?.dataValues[
+              formMapping.dataElements["method_to_ascertain_cause_of_death"]
+            ] === "METHOD_AUTOPSY" && (
+              <div>
+                <div style={{ fontWeight: "bold", marginBottom: "8px" }}>
+                  Autopsy information
+                </div>
+                {renderInputField(formMapping.dataElements["autopsy_info"])}
+              </div>
+            )}
           </div>
         </div>
 
         {/* G1 Section: Medical Data */}
-        {deathType === "afterOneWeek" && (
+        {currentEvent.dataValues[formMapping.dataElements["period_of_death"]] === "TIMING_AFTER_WEEK" && (
           <>
             <div className="stage-section">
               <div className="stage-section-title">G1: Medical Data</div>
@@ -1841,6 +1853,38 @@ const Stage = ({
                           backgroundColor: "#f5f5f5",
                         }}
                       >
+                        <strong>DORIS tool:</strong>
+                        <Button
+                          onClick={() => {
+                            detectUnderlyingCauseOfDeath();
+                          }}
+                          disabled={
+                            (currentEvent &&
+                              currentEvent.dataValues[
+                                formMapping.dataElements[
+                                  "underlyingCOD_processed_by"
+                                ]
+                              ] &&
+                              currentEvent.dataValues[
+                                formMapping.dataElements[
+                                  "underlyingCOD_processed_by"
+                                ]
+                              ] === "Manual") ||
+                            enrollmentStatus === "COMPLETED"
+                          }
+                        >
+                          {t("compute")}
+                        </Button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        colSpan="2"
+                        style={{
+                          backgroundColor: "#f5f5f5",
+                          textAlign: "right",
+                        }}
+                      >
                         Reason for Manual Code:
                         {renderInputField(
                           formMapping.dataElements[
@@ -1855,7 +1899,7 @@ const Stage = ({
             </div>
 
             {/* New Pregnancy Status Section for G1 */}
-            {deathType === "afterOneWeek" &&
+            {currentEvent.dataValues[formMapping.dataElements["period_of_death"]] === "TIMING_AFTER_WEEK" &&
               currentTeiSexAttributeValue === femaleCode && (
                 <div className="stage-section">
                   <div className="stage-section-title">Pregnancy Status</div>
@@ -1888,7 +1932,7 @@ const Stage = ({
           </>
         )}
         {/* G2 Section: Perinatal Death */}
-        {deathType === "withinOneWeek" && (
+        {currentEvent.dataValues[formMapping.dataElements["period_of_death"]]  === "TIMING_WITHIN_WEEK" && (
           <div className="stage-section">
             <div className="stage-section-title">G2: Perinatal Death</div>
             <div style={{ display: "flex", gap: "20px" }}>
@@ -2542,28 +2586,7 @@ const Stage = ({
               </div>
             </div>
 
-            {/* Pregnancy Status Section for G2 - Only for females */}
-            {currentTeiSexAttributeValue === femaleCode && (
-              <div className="stage-section" style={{ marginTop: "20px" }}>
-                <div className="stage-section-title">Pregnancy Status</div>
-                <div className="stage-section-content">
-                  <table className="pregnancy-status-table">
-                    <tbody>
-                      <tr>
-                        <td style={{ width: "90%" }}>
-                          Was she pregnant at the time of death or up to 42 days prior to death
-                          <div>
-                            {renderInputField(
-                              formMapping.dataElements["pregnant_at_time_of_birth"]
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
+          
           </div>
         )}
         {/* Manner of Death section - Now outside both G1 and G2 */}
