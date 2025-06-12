@@ -2215,6 +2215,22 @@ const Stage = ({
                         )}
                       </td>
                     </tr>
+                    {currentEvent?.dataValues[formMapping.dataElements["child_type_of_death"]] === "TYPE_DEATH_STILL" && (
+                      <>
+                        <tr>
+                          <td style={{ fontWeight: "bold" }}>
+                            When did heartbeat cease?
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style={{ width: "100%" }}>
+                            {renderInputField(
+                              formMapping.dataElements["heartbeat_ceased_type"]
+                            )}
+                          </td>
+                        </tr>
+                      </>
+                    )}
                     <tr>
                       <td style={{ fontWeight: "bold" }}>
                         Birth weight (grams)
@@ -2237,7 +2253,7 @@ const Stage = ({
                         )}
                       </td>
                     </tr>
-                    <tr>
+                    {/* <tr>
                       <td style={{ fontWeight: "bold" }}>
                         Was this a still born
                       </td>
@@ -2248,19 +2264,8 @@ const Stage = ({
                           formMapping.dataElements["stillborn"]
                         )}
                       </td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontWeight: "bold" }}>
-                        If stillborn, heartbeat ceased
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style={{ width: "100%" }}>
-                        {renderInputField(
-                          formMapping.dataElements["heartbeat_ceased_type"]
-                        )}
-                      </td>
-                    </tr>
+                    </tr> */}
+                 
                     <tr>
                       <td style={{ fontWeight: "bold" }}>
                         If death occurred within 24h, number of hours alive
