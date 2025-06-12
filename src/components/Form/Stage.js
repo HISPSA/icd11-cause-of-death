@@ -1945,15 +1945,43 @@ const Stage = ({
                 >
                   <tbody>
                     <tr>
-                      <td style={{ fontWeight: "bold" }}>Identity Number</td>
+                      <td style={{ fontWeight: "bold" }}>Identification Type</td>
                     </tr>
                     <tr>
                       <td style={{ width: "100%" }}>
                         {renderInputField(
-                          formMapping.dataElements["mother_identity_number"]
+                          formMapping.dataElements["mother_identification_type"]
                         )}
                       </td>
                     </tr>
+                    {currentEvent?.dataValues[formMapping.dataElements["mother_identification_type"]] === "ID_TYPE_SA" && (
+                      <>
+                        <tr>
+                          <td style={{ fontWeight: "bold" }}>Identity Number</td>
+                        </tr>
+                        <tr>
+                          <td style={{ width: "100%" }}>
+                            {renderInputField(
+                              formMapping.dataElements["mother_identity_number"]
+                            )}
+                          </td>
+                        </tr>
+                      </>
+                    )}
+                    {currentEvent?.dataValues[formMapping.dataElements["mother_identification_type"]] === "ID_TYPE_PASSPORT" && (
+                      <>
+                        <tr>
+                          <td style={{ fontWeight: "bold" }}>Passport Number</td>
+                        </tr>
+                        <tr>
+                          <td style={{ width: "100%" }}>
+                            {renderInputField(
+                              formMapping.dataElements["mother_passport_no"]
+                            )}
+                          </td>
+                        </tr>
+                      </>
+                    )}
                     <tr>
                       <td style={{ fontWeight: "bold" }}>Date of Birth</td>
                     </tr>
@@ -1966,7 +1994,7 @@ const Stage = ({
                     </tr>
                     <tr>
                       <td style={{ fontWeight: "bold" }}>
-                        Age of last birthday/DoB unknown
+                        Age of last birthday
                       </td>
                     </tr>
                     <tr>
