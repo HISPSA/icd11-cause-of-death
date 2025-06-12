@@ -35,6 +35,7 @@ const Stage = ({
   const [causeOfDeaths, setCauseOfDeaths] = useState(null);
   const [checkBoxUnderlying, setCheckBoxUnderlying] = useState("");
   const [flagUnderlying, setFlagUnderlying] = useState(false);
+  const [motherIdError, setMotherIdError] = useState("");
 
   const [underlyingSelections, setUnderlyingSelections] = useState([]);
   const [underlyingResult, setUnderlyingResult] = useState("");
@@ -42,12 +43,12 @@ const Stage = ({
   const [timeToDeath, setTimeToDeath] = useState(null);
   const [timeToDeathModal, setTimeToDeathModal] = useState(false);
 
-
   const {
     currentEnrollment,
     currentTei: { attributes },
     currentEnrollment: { enrollmentDate: currentTeiDateOfDeath },
     currentEnrollment: { status: enrollmentStatus },
+    currentEvents,
   } = data;
   const {
     programMetadata,
@@ -62,6 +63,76 @@ const Stage = ({
     attributes[formMapping.attributes["dob"]];
   const currentTeiAgeAttributeValue = attributes[formMapping.attributes["age"]];
 
+  const currentEvent = currentEvents.find((event) => {
+    return event.programStage === formMapping.programStage;
+  });
+
+  // Add useEffect for mother's SA ID processing
+  useEffect(() => {
+    if (!currentEvent) return;
+
+    const motherIdNumber = currentEvent.dataValues[formMapping.dataElements["mother_identity_number"]];
+    const motherIdType = currentEvent.dataValues[formMapping.dataElements["mother_identification_type"]];
+
+    // Reset error state
+    setMotherIdError("");
+
+    // Only process if we have a complete 13-digit ID number and correct ID type
+    if (
+      motherIdType === "ID_TYPE_SA" &&
+      motherIdNumber &&
+      motherIdNumber.length === 13 &&
+      /^\d+$/.test(motherIdNumber)
+    ) {
+      try {
+        const year = parseInt(motherIdNumber.substring(0, 2));
+        const month = motherIdNumber.substring(2, 4);
+        const day = motherIdNumber.substring(4, 6);
+
+        // Validate month and day
+        if (parseInt(month) < 1 || parseInt(month) > 12) {
+          setMotherIdError("Invalid month in ID number");
+          return;
+        }
+        if (parseInt(day) < 1 || parseInt(day) > 31) {
+          setMotherIdError("Invalid day in ID number");
+          return;
+        }
+
+        // Determine full year (assuming 1900s for now)
+        const fullYear = year < 50 ? 2000 + year : 1900 + year;
+
+        // Create date string in YYYY-MM-DD format
+        const dob = `${fullYear}-${month}-${day}`;
+
+        // Validate if it's a valid date
+        if (moment(dob, "YYYY-MM-DD", true).isValid()) {
+          // Update the mother's DOB field
+          mutateDataValue(currentEvent.event, formMapping.dataElements["mother_dob"], dob);
+
+          // Calculate and update mother's age
+          const age = moment().diff(moment(dob), "years");
+          if (age >= 0 && age <= 150) {
+            mutateDataValue(currentEvent.event, formMapping.dataElements["mother_age"], age.toString());
+          } else {
+            setMotherIdError("Invalid age calculated from ID number");
+          }
+        } else {
+          setMotherIdError("Invalid date in ID number");
+        }
+      } catch (error) {
+        console.error("Error processing mother's SA ID:", error);
+        setMotherIdError("Error processing ID number");
+      }
+    } else if (motherIdType === "ID_TYPE_SA" && motherIdNumber) {
+      if (motherIdNumber.length !== 13) {
+        setMotherIdError("ID number must be 13 digits");
+      } else if (!/^\d+$/.test(motherIdNumber)) {
+        setMotherIdError("ID number must contain only digits");
+      }
+    }
+  }, [currentEvent?.dataValues[formMapping.dataElements["mother_identity_number"]]]);
+
   const age = currentTeiAgeAttributeValue
     ? currentTeiAgeAttributeValue
     : Math.abs(
@@ -74,9 +145,6 @@ const Stage = ({
   const programStage = programMetadata.programStages.find(
     (ps) => ps.id === formMapping.programStage
   );
-  const currentEvent = data.currentEvents.find((event) => {
-    return event.programStage === formMapping.programStage;
-  });
   const returnInitValue = (de) => {
     return currentEvent
       ? currentEvent.dataValues[de]
@@ -362,6 +430,16 @@ const Stage = ({
       return null;
     }
     let disable = false;
+    
+    // Disable DOB and age fields if using ID number
+    if (
+      currentEvent?.dataValues[formMapping.dataElements["mother_identification_type"]] === "ID_TYPE_SA" &&
+      currentEvent?.dataValues[formMapping.dataElements["mother_identity_number"]]?.length === 13 &&
+      (de === formMapping.dataElements["mother_dob"] || de === formMapping.dataElements["mother_age"])
+    ) {
+      disable = true;
+    }
+
     if (
       currentEvent &&
       de === formMapping.dataElements["reason_of_manual_COD_selection"] &&
@@ -419,98 +497,113 @@ const Stage = ({
       }
     }
     return (
-      <InputField
-        value={
-          currentEvent && currentEvent.dataValues[de]
-            ? currentEvent.dataValues[de]
-            : de === formMapping.dataElements["underlyingCOD_processed_by"]
-            ? "DORIS"
-            : ""
-        }
-        change={(value) => {
-          // check if input is underlying checkbox
-          if (extraFunction) {
-            let currentCauseOfDeath = causeOfDeaths;
-            let id = null;
-            switch (de) {
-              case formMapping.dataElements["codA_underlying"]:
-                id = formMapping.dataElements["codA"];
-                break;
-              case formMapping.dataElements["codB_underlying"]:
-                id = formMapping.dataElements["codB"];
-                break;
-              case formMapping.dataElements["codC_underlying"]:
-                id = formMapping.dataElements["codC"];
-                break;
-              case formMapping.dataElements["codD_underlying"]:
-                id = formMapping.dataElements["codD"];
-                break;
-              case formMapping.dataElements["codO_underlying"]:
-                id = formMapping.dataElements["codO"];
-                break;
-              default:
-                break;
-            }
-
-            // set underlying
-            if (value) {
-              if (currentCauseOfDeath[id].code.split(",").length === 1) {
-                setUnderlyingResult(
-                  currentCauseOfDeath[id].code.split(" (")[0]
-                );
-              } else {
-                setUnderlyingSelections(
-                  currentCauseOfDeath[id].code.split(",").map((selection) => ({
-                    label: `${selection} - ${
-                      icd11Options.find(
-                        ({ code }) => code === selection.split(" (")[0]
-                      )?.name
-                    }`,
-                    value: selection.split(" (")[0],
-                  }))
-                );
-                setUnderlyingModal(true);
+      <div>
+        <InputField
+          value={
+            currentEvent && currentEvent.dataValues[de]
+              ? currentEvent.dataValues[de]
+              : de === formMapping.dataElements["underlyingCOD_processed_by"]
+              ? "DORIS"
+              : ""
+          }
+          change={(value) => {
+            // Add validation for mother's SA ID number
+            if (de === formMapping.dataElements["mother_identity_number"]) {
+              // Only allow numbers and limit to 13 digits
+              const numericValue = value.replace(/[^0-9]/g, "");
+              if (numericValue.length <= 13) {
+                mutateDataValue(currentEvent.event, de, numericValue);
               }
             } else {
-              setUnderlyingResult("");
-              setUnderlyingSelections([]);
-            }
+              // check if input is underlying checkbox
+              if (extraFunction) {
+                let currentCauseOfDeath = causeOfDeaths;
+                let id = null;
+                switch (de) {
+                  case formMapping.dataElements["codA_underlying"]:
+                    id = formMapping.dataElements["codA"];
+                    break;
+                  case formMapping.dataElements["codB_underlying"]:
+                    id = formMapping.dataElements["codB"];
+                    break;
+                  case formMapping.dataElements["codC_underlying"]:
+                    id = formMapping.dataElements["codC"];
+                    break;
+                  case formMapping.dataElements["codD_underlying"]:
+                    id = formMapping.dataElements["codD"];
+                    break;
+                  case formMapping.dataElements["codO_underlying"]:
+                    id = formMapping.dataElements["codO"];
+                    break;
+                  default:
+                    break;
+                }
 
-            if (id) {
-              for (const [key, val] of Object.entries(currentCauseOfDeath)) {
-                if (key === id) {
-                  val.underlying = value;
+                // set underlying
+                if (value) {
+                  if (currentCauseOfDeath[id].code.split(",").length === 1) {
+                    setUnderlyingResult(
+                      currentCauseOfDeath[id].code.split(" (")[0]
+                    );
+                  } else {
+                    setUnderlyingSelections(
+                      currentCauseOfDeath[id].code.split(",").map((selection) => ({
+                        label: `${selection} - ${
+                          icd11Options.find(
+                            ({ code }) => code === selection.split(" (")[0]
+                          )?.name
+                        }`,
+                        value: selection.split(" (")[0],
+                      }))
+                    );
+                    setUnderlyingModal(true);
+                  }
                 } else {
-                  val.underlying = false;
+                  setUnderlyingResult("");
+                  setUnderlyingSelections([]);
+                }
+
+                if (id) {
+                  for (const [key, val] of Object.entries(currentCauseOfDeath)) {
+                    if (key === id) {
+                      val.underlying = value;
+                    } else {
+                      val.underlying = false;
+                    }
+                  }
+
+                  setCauseOfDeaths({
+                    ...causeOfDeaths,
+                    ...currentCauseOfDeath,
+                  });
                 }
               }
-
-              setCauseOfDeaths({
-                ...causeOfDeaths,
-                ...currentCauseOfDeath,
-              });
+              // set DORIS
+              if (
+                currentEvent &&
+                de === formMapping.dataElements["underlyingCOD_processed_by"] &&
+                value === "DORIS"
+              ) {
+                mutateDataValue(
+                  currentEvent.event,
+                  formMapping.dataElements["reason_of_manual_COD_selection"],
+                  ""
+                );
+              }
+              mutateDataValue(currentEvent.event, de, value);
             }
-          }
-          // set DORIS
-          if (
-            currentEvent &&
-            de === formMapping.dataElements["underlyingCOD_processed_by"] &&
-            value === "DORIS"
-          ) {
-            mutateDataValue(
-              currentEvent.event,
-              formMapping.dataElements["reason_of_manual_COD_selection"],
-              ""
-            );
-          }
-          mutateDataValue(currentEvent.event, de, value);
-        }}
-        valueType={foundDe.valueType}
-        // label={foundDe.displayFormName}
-        valueSet={foundDe.valueSet}
-        disabled={disable || enrollmentStatus === "COMPLETED"}
-        placeholder={placeholder}
-      />
+          }}
+          valueType={foundDe.valueType}
+          valueSet={foundDe.valueSet}
+          disabled={disable || enrollmentStatus === "COMPLETED"}
+          placeholder={placeholder}
+        />
+        {de === formMapping.dataElements["mother_identity_number"] && motherIdError && (
+          <div style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
+            {motherIdError}
+          </div>
+        )}
+      </div>
     );
   };
 
