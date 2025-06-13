@@ -32,7 +32,7 @@ const Profile = ({
     currentEvents,
     currentEnrollment: { status: enrollmentStatus },
   } = data;
-  const { programMetadata, formMapping, fullnameOption } = metadata;
+  const { programMetadata, formMapping, fullnameOption, selectedOrgUnit } = metadata;
 
   useEffect(() => {
     if (getTeaValue(formMapping.attributes["system_id"]) === "") {
@@ -102,6 +102,13 @@ const Profile = ({
       }
     }
   }, [currentTei.attributes[formMapping.attributes["sa_id_number"]]]);
+
+  // Add useEffect for auto-populating health facility name
+  useEffect(() => {
+    if (selectedOrgUnit && selectedOrgUnit.displayName) {
+      mutateAttribute(formMapping.attributes["name_of_health_facility_practice"], selectedOrgUnit.displayName);
+    }
+  }, [selectedOrgUnit]);
 
   const getTeaMetadata = (attribute) =>
     programMetadata.trackedEntityAttributes.find((tea) => tea.id === attribute);
@@ -191,6 +198,7 @@ const Profile = ({
           }}
           disabled={
             attribute === formMapping.attributes["system_id"] ||
+            attribute === formMapping.attributes["name_of_health_facility_practice"] ||
             enrollmentStatus === "COMPLETED"
           }
           mandatory={
