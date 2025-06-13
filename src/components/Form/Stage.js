@@ -1194,10 +1194,10 @@ const Stage = ({
 
   const renderBirthTypeRadioGroup = () => {
     const options = [
-      { label: "Single birth", value: "single" },
-      { label: "First twin", value: "first_twin" },
-      { label: "Second twin", value: "second_twin" },
-      { label: "Other multiple", value: "other_multiple" },
+      { label: "Single birth", value: "BT_SINGLE" },
+      { label: "First twin", value: "BT_1ST_TWIN" },
+      { label: "Second twin", value: "BT_2ND_TWIN" },
+      { label: "Other multiple", value: "BT_MULTIPLE" },
     ];
 
     return (
@@ -2066,7 +2066,9 @@ const Stage = ({
                     <div style={{ fontWeight: "bold", marginBottom: "8px" }}>
                       Autopsy information
                     </div>
-                    {renderInputField(formMapping.dataElements["autopsy_info"])}
+                    {renderInputField(
+                      formMapping.dataElements["g1_autopsy_info"]
+                    )}
                   </div>
                 )}
 
@@ -2812,6 +2814,22 @@ const Stage = ({
                   Other relevant circumstances:
                   {renderInputField(
                     formMapping.dataElements["other_relevant_circumstances"]
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="stage-section">
+              <div className="stage-section-title">
+                Method and Autopsy Information
+              </div>
+              <div className="stage-section-content">
+                <div>
+                  <div style={{ fontWeight: "bold", marginBottom: "8px" }}>
+                    Autopsy information
+                  </div>
+                  {renderInputField(
+                    formMapping.dataElements["g2_autopsy_info"]
                   )}
                 </div>
               </div>
