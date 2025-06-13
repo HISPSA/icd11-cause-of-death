@@ -429,7 +429,7 @@ const Stage = ({
   };
 
   // Render Inputs ( text, checkbox - note: not for code and label fields)
-  const renderInputField = (de, extraFunction, placeholder) => {
+  const renderInputField = (de, extraFunction, placeholder, dateRestriction) => {
     const foundDe = programStage.dataElements.find(
       (dataElement) => dataElement.id === de
     );
@@ -437,6 +437,11 @@ const Stage = ({
       return null;
     }
     let disable = false;
+
+    // Special handling for date fields
+    const isDateField = foundDe.valueType === "DATE" || 
+                       foundDe.valueType === "DATE_WITH_RANGE" || 
+                       de === formMapping.dataElements["previous_delivery_date"];
 
     // Disable DOB and age fields if using ID number
     if (
@@ -609,10 +614,19 @@ const Stage = ({
               mutateDataValue(currentEvent.event, de, value);
             }
           }}
-          valueType={foundDe.valueType}
+          valueType={isDateField ? "DATE_WITH_RANGE" : foundDe.valueType}
           valueSet={foundDe.valueSet}
           disabled={disable || enrollmentStatus === "COMPLETED"}
           placeholder={placeholder}
+          disabledDate={
+            isDateField && dateRestriction
+              ? dateRestriction === "DISABLE_FUTURE_DATE"
+                ? (current) => current && current > moment().endOf("day")
+                : dateRestriction === "DISABLE_PAST_DATE"
+                ? (current) => current && current < moment().startOf("day")
+                : undefined
+              : undefined
+          }
         />
       </div>
     );
@@ -2205,7 +2219,10 @@ const Stage = ({
                     </div>
                     <div className="field-input">
                       {renderInputField(
-                        formMapping.dataElements["previous_delivery_date"]
+                        formMapping.dataElements["previous_delivery_date"],
+                        undefined,
+                        undefined,
+                        "DISABLE_FUTURE_DATE"
                       )}
                     </div>
                   </div>
@@ -2216,7 +2233,10 @@ const Stage = ({
                     </div>
                     <div className="field-input">
                       {renderInputField(
-                        formMapping.dataElements["first_day_of_last_menstrual"]
+                        formMapping.dataElements["first_day_of_last_menstrual"],
+                        undefined,
+                        undefined,
+                        "DISABLE_FUTURE_DATE"
                       )}
                     </div>
                   </div>
@@ -2796,7 +2816,10 @@ const Stage = ({
                           <td>{t("posisoning")}</td>
                           <td>
                             {renderInputField(
-                              formMapping.dataElements["dateOfInjury"]
+                              formMapping.dataElements["dateOfInjury"],
+                              undefined,
+                              undefined,
+                              "DISABLE_FUTURE_DATE"
                             )}
                           </td>
                         </tr>

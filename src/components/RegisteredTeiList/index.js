@@ -241,7 +241,7 @@ const RegisteredTeiList = ({ metadata, data, userRoles, initData, changeRoute })
               }
               columns={tableData.columns}
               dataSource={tableData.data}
-              scroll={{ y: size.height - 200 }}
+              scroll={{ y: size.height - 200, x: 'max-content' }}
               loading={loadingTable}
               onChange={(pagination, filters, sorter, extra) => {
                 onSort(sorter);
