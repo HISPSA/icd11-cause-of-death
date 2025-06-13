@@ -454,7 +454,7 @@ const Stage = ({
     const validatePregnancyDuration = (value) => {
       if (isPregnancyDuration) {
         const numValue = parseInt(value);
-        if (numValue > 42) {
+        if (numValue > 42 || numValue < 0) {
           return false;
         }
       }
@@ -2271,7 +2271,7 @@ const Stage = ({
 
                   <div className="form-field">
                     <div className="field-label" style={{ fontWeight: "bold" }}>
-                      Estimated duration of pregnancy (weeks)
+                      Estimated duration of pregnancy (in completed weeks)
                     </div>
                     <div className="field-input">
                       {renderInputField(
