@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { connect } from "react-redux";
-
-import { Button, Modal, Tooltip } from "antd";
+import { Button, Modal, Tooltip, Radio } from "antd";
 
 /* Styling tools */
 import { useTranslation } from "react-i18next";
@@ -71,11 +70,11 @@ const Stage = ({
     if (!currentEvent) return;
 
     const motherIdNumber =
-      currentEvent.dataValues[
+      currentEvent?.dataValues[
         formMapping.dataElements["mother_identity_number"]
       ];
     const motherIdType =
-      currentEvent.dataValues[
+      currentEvent?.dataValues[
         formMapping.dataElements["mother_identification_type"]
       ];
 
@@ -109,7 +108,7 @@ const Stage = ({
         if (moment(dob, "YYYY-MM-DD", true).isValid()) {
           // Update the mother's DOB field
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["mother_dob"],
             dob
           );
@@ -118,7 +117,7 @@ const Stage = ({
           const age = moment().diff(moment(dob), "years");
           if (age >= 0 && age <= 150) {
             mutateDataValue(
-              currentEvent.event,
+              currentEvent?.event,
               formMapping.dataElements["mother_age"],
               age.toString()
             );
@@ -154,8 +153,8 @@ const Stage = ({
   );
   const returnInitValue = (de) => {
     return currentEvent
-      ? currentEvent.dataValues[de]
-        ? currentEvent.dataValues[de]
+      ? currentEvent?.dataValues[de]
+        ? currentEvent?.dataValues[de]
         : ""
       : "";
   };
@@ -180,9 +179,9 @@ const Stage = ({
         formMapping.dataElements["age_mother"],
         formMapping.dataElements["pregnancy_conditions"],
       ].map((deId) => {
-        mutateDataValue(currentEvent.event, deId, "");
+        mutateDataValue(currentEvent?.event, deId, "");
       });
-      mutateEvent(currentEvent.event, "isDirty", false);
+      mutateEvent(currentEvent?.event, "isDirty", false);
     }
   }, [age]);
 
@@ -197,9 +196,9 @@ const Stage = ({
         formMapping.dataElements["time_from_pregnancy"],
         formMapping.dataElements["pregnancy_contributed_to_death"],
       ].map((deId) => {
-        mutateDataValue(currentEvent.event, deId, "");
+        mutateDataValue(currentEvent?.event, deId, "");
       });
-      mutateEvent(currentEvent.event, "isDirty", false);
+      mutateEvent(currentEvent?.event, "isDirty", false);
     }
   }, [currentTeiSexAttributeValue, age]);
 
@@ -297,18 +296,18 @@ const Stage = ({
   const setValueIcdField = (cod) => {
     if (activeCauseOfDeath !== "") {
       mutateDataValue(
-        currentEvent.event,
+        currentEvent?.event,
         activeCauseOfDeath.code,
         cod[activeCauseOfDeath.code].code
       );
-      // mutateDataValue(currentEvent.event, activeCauseOfDeath.label, cod[activeCauseOfDeath.code].label);
+      // mutateDataValue(currentEvent?.event, activeCauseOfDeath.label, cod[activeCauseOfDeath.code].label);
       mutateDataValue(
-        currentEvent.event,
+        currentEvent?.event,
         activeCauseOfDeath.underlying,
         cod[activeCauseOfDeath.code].underlying
       );
       mutateDataValue(
-        currentEvent.event,
+        currentEvent?.event,
         activeCauseOfDeath.entityId,
         cod[activeCauseOfDeath.code].entityId
       );
@@ -328,8 +327,8 @@ const Stage = ({
 
     const currentUnderlyingCoD =
       currentEvent &&
-      currentEvent.dataValues[formMapping.dataElements["underlyingCOD_code"]]
-        ? currentEvent.dataValues[
+      currentEvent?.dataValues[formMapping.dataElements["underlyingCOD_code"]]
+        ? currentEvent?.dataValues[
             formMapping.dataElements["underlyingCOD_code"]
           ]
         : "";
@@ -338,17 +337,17 @@ const Stage = ({
       if (result && result !== "") {
         if (result !== currentUnderlyingCoD) {
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["underlyingCOD"],
             result
           );
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["underlyingCOD_code"],
             result
           );
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["underlyingCOD_chapter"],
             icd11Options
               .find((option) => option.code === result)
@@ -359,7 +358,7 @@ const Stage = ({
               ).value
           );
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["underlyingCOD_group"],
             icd11Options
               .find((option) => option.code === result)
@@ -370,66 +369,71 @@ const Stage = ({
           );
         }
       } else {
-        if (currentEvent.isDirty) {
+        if (currentEvent?.isDirty) {
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["underlyingCOD"],
             ""
           );
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["underlyingCOD_code"],
             ""
           );
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["underlyingCOD_chapter"],
             ""
           );
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["underlyingCOD_group"],
             ""
           );
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["underlyingCOD_report"],
             ""
           );
         } else {
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["underlyingCOD"],
             ""
           );
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["underlyingCOD_code"],
             ""
           );
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["underlyingCOD_chapter"],
             ""
           );
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["underlyingCOD_group"],
             ""
           );
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["underlyingCOD_report"],
             ""
           );
-          mutateEvent(currentEvent.event, "isDirty", false);
+          mutateEvent(currentEvent?.event, "isDirty", false);
         }
       }
     }
   };
 
   // Render Inputs ( text, checkbox - note: not for code and label fields)
-  const renderInputField = (de, extraFunction, placeholder, dateRestriction) => {
+  const renderInputField = (
+    de,
+    extraFunction,
+    placeholder,
+    dateRestriction
+  ) => {
     const foundDe = programStage.dataElements.find(
       (dataElement) => dataElement.id === de
     );
@@ -439,9 +443,23 @@ const Stage = ({
     let disable = false;
 
     // Special handling for date fields
-    const isDateField = foundDe.valueType === "DATE" || 
-                       foundDe.valueType === "DATE_WITH_RANGE" || 
-                       de === formMapping.dataElements["previous_delivery_date"];
+    const isDateField =
+      foundDe.valueType === "DATE" ||
+      foundDe.valueType === "DATE_WITH_RANGE" ||
+      de === formMapping.dataElements["previous_delivery_date"];
+
+    // Add validation for pregnancy duration weeks
+    const isPregnancyDuration =
+      de === formMapping.dataElements["preg_duration"];
+    const validatePregnancyDuration = (value) => {
+      if (isPregnancyDuration) {
+        const numValue = parseInt(value);
+        if (numValue > 42) {
+          return false;
+        }
+      }
+      return true;
+    };
 
     // Disable DOB and age fields if using ID number
     if (
@@ -460,13 +478,13 @@ const Stage = ({
     if (
       currentEvent &&
       de === formMapping.dataElements["reason_of_manual_COD_selection"] &&
-      ((currentEvent.dataValues[
+      ((currentEvent?.dataValues[
         formMapping.dataElements["underlyingCOD_processed_by"]
       ] &&
-        currentEvent.dataValues[
+        currentEvent?.dataValues[
           formMapping.dataElements["underlyingCOD_processed_by"]
         ] === "DORIS") ||
-        !currentEvent.dataValues[
+        !currentEvent?.dataValues[
           formMapping.dataElements["underlyingCOD_processed_by"]
         ])
     ) {
@@ -475,50 +493,20 @@ const Stage = ({
     if (
       currentEvent &&
       de === formMapping.dataElements["underlyingCOD_processed_by"] &&
-      currentEvent.dataValues[
+      currentEvent?.dataValues[
         formMapping.dataElements["underlyingCOD_processed_by"]
       ] !== "Manual" &&
       underlyingResult === ""
     ) {
       disable = true;
     }
-    if (
-      de === formMapping.dataElements["codA_underlying"] ||
-      de === formMapping.dataElements["codB_underlying"] ||
-      de === formMapping.dataElements["codC_underlying"] ||
-      de === formMapping.dataElements["codD_underlying"] ||
-      de === formMapping.dataElements["codO_underlying"]
-    ) {
-      if (checkBoxUnderlying !== "" && checkBoxUnderlying !== de) {
-        disable = true;
-      }
-      if (
-        currentEvent &&
-        !currentEvent.dataValues[
-          formMapping.dataElements["underlyingCOD_processed_by"]
-        ] &&
-        checkBoxUnderlying === ""
-      ) {
-        disable = true;
-      }
-      if (
-        currentEvent &&
-        currentEvent.dataValues[
-          formMapping.dataElements["underlyingCOD_processed_by"]
-        ] &&
-        currentEvent.dataValues[
-          formMapping.dataElements["underlyingCOD_processed_by"]
-        ] === "DORIS"
-      ) {
-        disable = true;
-      }
-    }
+
     return (
       <div>
         <InputField
           value={
-            currentEvent && currentEvent.dataValues[de]
-              ? currentEvent.dataValues[de]
+            currentEvent && currentEvent?.dataValues[de]
+              ? currentEvent?.dataValues[de]
               : de === formMapping.dataElements["underlyingCOD_processed_by"]
               ? "DORIS"
               : ""
@@ -529,7 +517,15 @@ const Stage = ({
               // Only allow numbers and limit to 13 digits
               const numericValue = value.replace(/[^0-9]/g, "");
               if (numericValue.length <= 13) {
-                mutateDataValue(currentEvent.event, de, numericValue);
+                mutateDataValue(currentEvent?.event, de, numericValue);
+              }
+            } else if (isPregnancyDuration) {
+              // Validate pregnancy duration weeks
+              if (validatePregnancyDuration(value)) {
+                mutateDataValue(currentEvent?.event, de, value);
+                if (extraFunction) {
+                  extraFunction(value);
+                }
               }
             } else {
               // check if input is underlying checkbox
@@ -606,12 +602,12 @@ const Stage = ({
                 value === "DORIS"
               ) {
                 mutateDataValue(
-                  currentEvent.event,
+                  currentEvent?.event,
                   formMapping.dataElements["reason_of_manual_COD_selection"],
                   ""
                 );
               }
-              mutateDataValue(currentEvent.event, de, value);
+              mutateDataValue(currentEvent?.event, de, value);
             }
           }}
           valueType={isDateField ? "DATE_WITH_RANGE" : foundDe.valueType}
@@ -685,20 +681,20 @@ const Stage = ({
     return (
       <InputField
         // addonBefore={
-        //   currentEvent ? currentEvent.dataValues[codCode] ? <b>{currentEvent.dataValues[codCode]}</b> : "" : ""
+        //   currentEvent ? currentEvent?.dataValues[codCode] ? <b>{currentEvent?.dataValues[codCode]}</b> : "" : ""
         // }
-        // value={currentEvent ? (currentEvent.dataValues[codCode] ? currentEvent.dataValues[codCode] : "") : ""}
+        // value={currentEvent ? (currentEvent?.dataValues[codCode] ? currentEvent?.dataValues[codCode] : "") : ""}
         value={
           currentEvent
-            ? currentEvent.dataValues[codCode]
-              ? currentEvent.dataValues[codCode].split(",")
+            ? currentEvent?.dataValues[codCode]
+              ? currentEvent?.dataValues[codCode].split(",")
               : []
             : []
         }
         valueSet={
           currentEvent
-            ? currentEvent.dataValues[codCode]
-              ? currentEvent.dataValues[codCode].split(",")
+            ? currentEvent?.dataValues[codCode]
+              ? currentEvent?.dataValues[codCode].split(",")
               : []
             : []
         }
@@ -720,9 +716,9 @@ const Stage = ({
         // allowClear={true}
         change={(value) => {
           if (value === "") {
-            mutateDataValue(currentEvent.event, codCode, "");
-            // mutateDataValue(currentEvent.event, codName, "");
-            mutateDataValue(currentEvent.event, codUnderlying, false);
+            mutateDataValue(currentEvent?.event, codCode, "");
+            // mutateDataValue(currentEvent?.event, codName, "");
+            mutateDataValue(currentEvent?.event, codUnderlying, false);
             causeOfDeaths[codCode].code = "";
             // causeOfDeaths[codCode].label = "";
             causeOfDeaths[codCode].underlying = false;
@@ -730,8 +726,8 @@ const Stage = ({
           }
 
           let dataValues_codEntityId =
-            currentEvent.dataValues[codEntityId].split(",");
-          currentEvent.dataValues[codCode].split(",").forEach((c, i) => {
+            currentEvent?.dataValues[codEntityId].split(",");
+          currentEvent?.dataValues[codCode].split(",").forEach((c, i) => {
             if (!value.find((v) => c === v)) {
               console.log(c, i);
               // dataValues_codEntityId = dataValues_codEntityId.splice(i,1);
@@ -745,36 +741,36 @@ const Stage = ({
           causeOfDeaths[formMapping.dataElements["codD"]].underlying = false;
           causeOfDeaths[formMapping.dataElements["codO"]].underlying = false;
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["codA_underlying"],
             false
           );
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["codB_underlying"],
             false
           );
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["codC_underlying"],
             false
           );
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["codD_underlying"],
             false
           );
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["codO_underlying"],
             false
           );
 
           causeOfDeaths[codCode].code = value.join(",");
           causeOfDeaths[codCode].entityId = dataValues_codEntityId.join(",");
-          mutateDataValue(currentEvent.event, codCode, value.join(","));
+          mutateDataValue(currentEvent?.event, codCode, value.join(","));
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             codEntityId,
             dataValues_codEntityId.join(",")
           );
@@ -783,7 +779,7 @@ const Stage = ({
           setUnderlyingResult("");
 
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["underlyingCOD_processed_by"],
             "DORIS"
           );
@@ -913,147 +909,153 @@ const Stage = ({
             .map((c) => c.split(" (")[1]?.replace(")", "") ?? "")
             .join(",")
         : "") +
-      (currentEvent.dataValues[formMapping.dataElements["surgery"]] &&
-      currentEvent.dataValues[formMapping.dataElements["surgery"]] !== ""
+      (currentEvent?.dataValues[formMapping.dataElements["surgery"]] &&
+      currentEvent?.dataValues[formMapping.dataElements["surgery"]] !== ""
         ? "&surgeryWasPerformed=" +
-          currentEvent.dataValues[formMapping.dataElements["surgery"]]
+          currentEvent?.dataValues[formMapping.dataElements["surgery"]]
         : "") +
-      (currentEvent.dataValues[formMapping.dataElements["surgery_date"]] &&
-      currentEvent.dataValues[formMapping.dataElements["surgery_date"]] !== ""
+      (currentEvent?.dataValues[formMapping.dataElements["surgery_date"]] &&
+      currentEvent?.dataValues[formMapping.dataElements["surgery_date"]] !== ""
         ? "&surgeryDate=" +
-          currentEvent.dataValues[formMapping.dataElements["surgery_date"]]
+          currentEvent?.dataValues[formMapping.dataElements["surgery_date"]]
         : "") +
-      (currentEvent.dataValues[formMapping.dataElements["surgery_reason"]] &&
-      currentEvent.dataValues[formMapping.dataElements["surgery_reason"]] !== ""
-        ? "&surgeryReason=" +
-          currentEvent.dataValues[formMapping.dataElements["surgery_reason"]]
-        : "") +
-      (currentEvent.dataValues[formMapping.dataElements["autopsy"]] &&
-      currentEvent.dataValues[formMapping.dataElements["autopsy"]] !== ""
-        ? "&autopsyWasRequested=" +
-          currentEvent.dataValues[formMapping.dataElements["autopsy"]]
-        : "") +
-      (currentEvent.dataValues[formMapping.dataElements["autopsy_specified"]] &&
-      currentEvent.dataValues[formMapping.dataElements["autopsy_specified"]] !==
+      (currentEvent?.dataValues[formMapping.dataElements["surgery_reason"]] &&
+      currentEvent?.dataValues[formMapping.dataElements["surgery_reason"]] !==
         ""
+        ? "&surgeryReason=" +
+          currentEvent?.dataValues[formMapping.dataElements["surgery_reason"]]
+        : "") +
+      (currentEvent?.dataValues[formMapping.dataElements["autopsy"]] &&
+      currentEvent?.dataValues[formMapping.dataElements["autopsy"]] !== ""
+        ? "&autopsyWasRequested=" +
+          currentEvent?.dataValues[formMapping.dataElements["autopsy"]]
+        : "") +
+      (currentEvent?.dataValues[
+        formMapping.dataElements["autopsy_specified"]
+      ] &&
+      currentEvent?.dataValues[
+        formMapping.dataElements["autopsy_specified"]
+      ] !== ""
         ? "&autopsyFindings=" +
-          currentEvent.dataValues[formMapping.dataElements["autopsy_specified"]]
+          currentEvent?.dataValues[
+            formMapping.dataElements["autopsy_specified"]
+          ]
         : "") +
-      (currentEvent.dataValues[formMapping.dataElements["mannerOfDeath"]] &&
-      currentEvent.dataValues[formMapping.dataElements["mannerOfDeath"]] !== ""
+      (currentEvent?.dataValues[formMapping.dataElements["mannerOfDeath"]] &&
+      currentEvent?.dataValues[formMapping.dataElements["mannerOfDeath"]] !== ""
         ? "&mannerOfDeath=" +
-          currentEvent.dataValues[formMapping.dataElements["mannerOfDeath"]]
+          currentEvent?.dataValues[formMapping.dataElements["mannerOfDeath"]]
         : "") +
-      (currentEvent.dataValues[formMapping.dataElements["dateOfInjury"]] &&
-      currentEvent.dataValues[formMapping.dataElements["dateOfInjury"]] !== ""
+      (currentEvent?.dataValues[formMapping.dataElements["dateOfInjury"]] &&
+      currentEvent?.dataValues[formMapping.dataElements["dateOfInjury"]] !== ""
         ? "&mannerOfDeathDateOfExternalCauseOrPoisoning=" +
-          currentEvent.dataValues[formMapping.dataElements["dateOfInjury"]]
+          currentEvent?.dataValues[formMapping.dataElements["dateOfInjury"]]
         : "") +
-      (currentEvent.dataValues[formMapping.dataElements["externalCause"]] &&
-      currentEvent.dataValues[formMapping.dataElements["externalCause"]] !== ""
+      (currentEvent?.dataValues[formMapping.dataElements["externalCause"]] &&
+      currentEvent?.dataValues[formMapping.dataElements["externalCause"]] !== ""
         ? "&mannerOfDeathDescriptionExternalCause=" +
-          currentEvent.dataValues[formMapping.dataElements["externalCause"]]
+          currentEvent?.dataValues[formMapping.dataElements["externalCause"]]
         : "") +
-      (currentEvent.dataValues[
+      (currentEvent?.dataValues[
         formMapping.dataElements["externalCause_place"]
       ] &&
-      currentEvent.dataValues[
+      currentEvent?.dataValues[
         formMapping.dataElements["externalCause_place"]
       ] !== ""
         ? "&mannerOfDeathPlaceOfOccuranceExternalCause=" +
-          currentEvent.dataValues[
+          currentEvent?.dataValues[
             formMapping.dataElements["externalCause_place"]
           ]
         : "") +
-      (currentEvent.dataValues[
+      (currentEvent?.dataValues[
         formMapping.dataElements["multiple_pregnancies"]
       ] &&
-      currentEvent.dataValues[
+      currentEvent?.dataValues[
         formMapping.dataElements["multiple_pregnancies"]
       ] !== ""
         ? "&=fetalOrInfantDeathMultiplePregnancy" +
-          currentEvent.dataValues[
+          currentEvent?.dataValues[
             formMapping.dataElements["multiple_pregnancies"]
           ]
         : "") +
-      (currentEvent.dataValues[formMapping.dataElements["stillborn"]] &&
-      currentEvent.dataValues[formMapping.dataElements["stillborn"]] !== ""
+      (currentEvent?.dataValues[formMapping.dataElements["stillborn"]] &&
+      currentEvent?.dataValues[formMapping.dataElements["stillborn"]] !== ""
         ? "&=fetalOrInfantDeathStillborn" +
-          currentEvent.dataValues[formMapping.dataElements["stillborn"]]
+          currentEvent?.dataValues[formMapping.dataElements["stillborn"]]
         : "") +
-      (currentEvent.dataValues[
+      (currentEvent?.dataValues[
         formMapping.dataElements["hours_newborn_survived"]
       ] &&
-      currentEvent.dataValues[
+      currentEvent?.dataValues[
         formMapping.dataElements["hours_newborn_survived"]
       ] !== ""
         ? "&=fetalOrInfantDeathDeathWithin24h" +
-          currentEvent.dataValues[
+          currentEvent?.dataValues[
             formMapping.dataElements["hours_newborn_survived"]
           ]
         : "") +
-      (currentEvent.dataValues[formMapping.dataElements["birth_weight"]] &&
-      currentEvent.dataValues[formMapping.dataElements["birth_weight"]] !== ""
+      (currentEvent?.dataValues[formMapping.dataElements["birth_weight"]] &&
+      currentEvent?.dataValues[formMapping.dataElements["birth_weight"]] !== ""
         ? "&=fetalOrInfantDeathBirthWeight" +
-          currentEvent.dataValues[formMapping.dataElements["birth_weight"]]
+          currentEvent?.dataValues[formMapping.dataElements["birth_weight"]]
         : "") +
-      (currentEvent.dataValues[
+      (currentEvent?.dataValues[
         formMapping.dataElements["completedWeeks_pregnancy"]
       ] &&
-      currentEvent.dataValues[
+      currentEvent?.dataValues[
         formMapping.dataElements["completedWeeks_pregnancy"]
       ] !== ""
         ? "&=fetalOrInfantDeathPregnancyWeeks" +
-          currentEvent.dataValues[
+          currentEvent?.dataValues[
             formMapping.dataElements["completedWeeks_pregnancy"]
           ]
         : "") +
-      (currentEvent.dataValues[formMapping.dataElements["age_mother"]] &&
-      currentEvent.dataValues[formMapping.dataElements["age_mother"]] !== ""
+      (currentEvent?.dataValues[formMapping.dataElements["age_mother"]] &&
+      currentEvent?.dataValues[formMapping.dataElements["age_mother"]] !== ""
         ? "&=fetalOrInfantDeathAgeMother" +
-          currentEvent.dataValues[formMapping.dataElements["age_mother"]]
+          currentEvent?.dataValues[formMapping.dataElements["age_mother"]]
         : "") +
-      (currentEvent.dataValues[
+      (currentEvent?.dataValues[
         formMapping.dataElements["pregnancy_conditions"]
       ] &&
-      currentEvent.dataValues[
+      currentEvent?.dataValues[
         formMapping.dataElements["pregnancy_conditions"]
       ] !== ""
         ? "&=fetalOrInfantDeathPerinatalDescription" +
-          currentEvent.dataValues[
+          currentEvent?.dataValues[
             formMapping.dataElements["pregnancy_conditions"]
           ]
         : "") +
-      (currentEvent.dataValues[
+      (currentEvent?.dataValues[
         formMapping.dataElements["pregnancy_inLastYear"]
       ] &&
-      currentEvent.dataValues[
+      currentEvent?.dataValues[
         formMapping.dataElements["pregnancy_inLastYear"]
       ] !== ""
         ? "&=maternalDeathWasPregnant" +
-          currentEvent.dataValues[
+          currentEvent?.dataValues[
             formMapping.dataElements["pregnancy_inLastYear"]
           ]
         : "") +
-      (currentEvent.dataValues[
+      (currentEvent?.dataValues[
         formMapping.dataElements["time_from_pregnancy"]
       ] &&
-      currentEvent.dataValues[
+      currentEvent?.dataValues[
         formMapping.dataElements["time_from_pregnancy"]
       ] !== ""
         ? "&=maternalDeathTimeFromPregnancy" +
-          currentEvent.dataValues[
+          currentEvent?.dataValues[
             formMapping.dataElements["time_from_pregnancy"]
           ]
         : "") +
-      (currentEvent.dataValues[
+      (currentEvent?.dataValues[
         formMapping.dataElements["pregnancy_contributed_to_death"]
       ] &&
-      currentEvent.dataValues[
+      currentEvent?.dataValues[
         formMapping.dataElements["pregnancy_contributed_to_death"]
       ] !== ""
         ? "&=maternalDeathPregnancyContribute" +
-          currentEvent.dataValues[
+          currentEvent?.dataValues[
             formMapping.dataElements["pregnancy_contributed_to_death"]
           ]
         : "");
@@ -1108,55 +1110,55 @@ const Stage = ({
       };
 
       mutateDataValue(
-        currentEvent.event,
+        currentEvent?.event,
         formMapping.dataElements["codA_underlying"],
         cods[formMapping.dataElements["codA"]].underlying
       );
       mutateDataValue(
-        currentEvent.event,
+        currentEvent?.event,
         formMapping.dataElements["codB_underlying"],
         cods[formMapping.dataElements["codB"]].underlying
       );
       mutateDataValue(
-        currentEvent.event,
+        currentEvent?.event,
         formMapping.dataElements["codC_underlying"],
         cods[formMapping.dataElements["codC"]].underlying
       );
       mutateDataValue(
-        currentEvent.event,
+        currentEvent?.event,
         formMapping.dataElements["codD_underlying"],
         cods[formMapping.dataElements["codD"]].underlying
       );
       mutateDataValue(
-        currentEvent.event,
+        currentEvent?.event,
         formMapping.dataElements["codO_underlying"],
         cods[formMapping.dataElements["codO"]].underlying
       );
       mutateDataValue(
-        currentEvent.event,
+        currentEvent?.event,
         formMapping.dataElements["underlyingCOD_report"],
         result.report
       );
       mutateDataValue(
-        currentEvent.event,
+        currentEvent?.event,
         formMapping.dataElements["underlyingCOD_warning"],
         result.warning ?? ""
       );
-      // mutateDataValue(currentEvent.event, formMapping.dataElements["underlyingCOD_report"], result.UCComputed?.Report ?? result.UCComputed?.Errors ?? "");
+      // mutateDataValue(currentEvent?.event, formMapping.dataElements["underlyingCOD_report"], result.UCComputed?.Report ?? result.UCComputed?.Errors ?? "");
 
       mutateDataValue(
-        currentEvent.event,
+        currentEvent?.event,
         formMapping.dataElements["underlyingCOD_processed_by"],
         "DORIS"
       );
       mutateDataValue(
-        currentEvent.event,
+        currentEvent?.event,
         formMapping.dataElements["reason_of_manual_COD_selection"],
         ""
       ); // For clearing the value of reason for the manual selection
 
       mutateDataValue(
-        currentEvent.event,
+        currentEvent?.event,
         formMapping.dataElements["underlyingCOD_DORIS"],
         underlyingCode
       );
@@ -1165,14 +1167,63 @@ const Stage = ({
       setCauseOfDeaths(cods);
     } else {
       mutateDataValue(
-        currentEvent.event,
+        currentEvent?.event,
         formMapping.dataElements["underlyingCOD_warning"],
         result.warning ?? ""
       );
     }
   };
 
-  // const getUcodResult = () => currentEvent && currentEvent.dataValues[formMapping.dataElements["underlyingCOD_report"]] ? currentEvent.dataValues[formMapping.dataElements["underlyingCOD_report"]] : t("note_WHO_digital_open_rule_integrated_cause_of_death_selection_Doris");
+  // const getUcodResult = () => currentEvent && currentEvent?.dataValues[formMapping.dataElements["underlyingCOD_report"]] ? currentEvent?.dataValues[formMapping.dataElements["underlyingCOD_report"]] : t("note_WHO_digital_open_rule_integrated_cause_of_death_selection_Doris");
+
+  const calculateTotalPreviousPregnancies = () => {
+    if (!currentEvent) return 0;
+
+    const liveBirths = parseInt(
+      currentEvent?.dataValues[formMapping.dataElements["live_births"]] || 0
+    );
+    const stillBirths = parseInt(
+      currentEvent?.dataValues[formMapping.dataElements["still_births"]] || 0
+    );
+    const abortions = parseInt(
+      currentEvent?.dataValues[formMapping.dataElements["abortions"]] || 0
+    );
+
+    return liveBirths + stillBirths + abortions;
+  };
+
+  const renderBirthTypeRadioGroup = () => {
+    const options = [
+      { label: "Single birth", value: "single" },
+      { label: "First twin", value: "first_twin" },
+      { label: "Second twin", value: "second_twin" },
+      { label: "Other multiple", value: "other_multiple" },
+    ];
+
+    return (
+      <Radio.Group
+        value={
+          currentEvent?.dataValues[
+            formMapping.dataElements["child_birth_type"]
+          ] || ""
+        }
+        onChange={(e) => {
+          mutateDataValue(
+            currentEvent?.event,
+            formMapping.dataElements["child_birth_type"],
+            e.target.value
+          );
+        }}
+        disabled={enrollmentStatus === "COMPLETED"}
+      >
+        {options.map((option) => (
+          <Radio key={option.value} value={option.value}>
+            {option.label}
+          </Radio>
+        ))}
+      </Radio.Group>
+    );
+  };
 
   return (
     <>
@@ -1212,7 +1263,7 @@ const Stage = ({
             type="primary"
             onClick={() => {
               mutateDataValue(
-                currentEvent.event,
+                currentEvent?.event,
                 timeToDeath.causeId,
                 timeToDeath.timeInterval.reduce((accumulator, currentValue) => {
                   return accumulator === ""
@@ -1446,27 +1497,27 @@ const Stage = ({
           causeOfDeaths[formMapping.dataElements["codD"]].underlying = false;
           causeOfDeaths[formMapping.dataElements["codO"]].underlying = false;
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["codA_underlying"],
             false
           );
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["codB_underlying"],
             false
           );
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["codC_underlying"],
             false
           );
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["codD_underlying"],
             false
           );
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["codO_underlying"],
             false
           );
@@ -1484,18 +1535,18 @@ const Stage = ({
           setCauseOfDeaths({ ...causeOfDeaths });
           setUnderlyingResult("");
           mutateDataValue(
-            currentEvent.event,
+            currentEvent?.event,
             formMapping.dataElements["underlyingCOD_processed_by"],
             "DORIS"
           );
         }}
         defaultValue={{
-          // title: (currentEvent && currentEvent.dataValues[activeCauseOfDeath.label]) || "",
-          // code: (currentEvent && currentEvent.dataValues[activeCauseOfDeath.code]) || ""
+          // title: (currentEvent && currentEvent?.dataValues[activeCauseOfDeath.label]) || "",
+          // code: (currentEvent && currentEvent?.dataValues[activeCauseOfDeath.code]) || ""
           title: "",
           code: "",
         }}
-        // freeText={(currentEvent && currentEvent.dataValues[activeCauseOfDeath.freeText]) || ""}
+        // freeText={(currentEvent && currentEvent?.dataValues[activeCauseOfDeath.freeText]) || ""}
       />
       <div>
         {/* <Tabs defaultActiveKey="1" type="card">
@@ -1509,7 +1560,7 @@ const Stage = ({
         </div>
 
         {/* G1 Section: Medical Data */}
-        {currentEvent.dataValues[
+        {currentEvent?.dataValues[
           formMapping.dataElements["period_of_death"]
         ] === "TIMING_AFTER_WEEK" && (
           <>
@@ -1581,7 +1632,7 @@ const Stage = ({
                                   setTimeToDeath({
                                     causeId: formMapping.dataElements["codA"],
                                     causeLabel: "Immediate cause of death",
-                                    timeInterval: currentEvent.dataValues[
+                                    timeInterval: currentEvent?.dataValues[
                                       formMapping.dataElements["codA"]
                                     ]
                                       .split(",")
@@ -1667,7 +1718,7 @@ const Stage = ({
                                     causeId: formMapping.dataElements["codB"],
                                     causeLabel:
                                       "Condition leading to immediate cause",
-                                    timeInterval: currentEvent.dataValues[
+                                    timeInterval: currentEvent?.dataValues[
                                       formMapping.dataElements["codB"]
                                     ]
                                       .split(",")
@@ -1753,7 +1804,7 @@ const Stage = ({
                                     causeId: formMapping.dataElements["codC"],
                                     causeLabel:
                                       "Condition leading to previous cause",
-                                    timeInterval: currentEvent.dataValues[
+                                    timeInterval: currentEvent?.dataValues[
                                       formMapping.dataElements["codC"]
                                     ]
                                       .split(",")
@@ -1838,7 +1889,7 @@ const Stage = ({
                                   setTimeToDeath({
                                     causeId: formMapping.dataElements["codD"],
                                     causeLabel: "Underlying cause of death",
-                                    timeInterval: currentEvent.dataValues[
+                                    timeInterval: currentEvent?.dataValues[
                                       formMapping.dataElements["codD"]
                                     ]
                                       .split(",")
@@ -1920,12 +1971,12 @@ const Stage = ({
                           }}
                           disabled={
                             (currentEvent &&
-                              currentEvent.dataValues[
+                              currentEvent?.dataValues[
                                 formMapping.dataElements[
                                   "underlyingCOD_processed_by"
                                 ]
                               ] &&
-                              currentEvent.dataValues[
+                              currentEvent?.dataValues[
                                 formMapping.dataElements[
                                   "underlyingCOD_processed_by"
                                 ]
@@ -1937,39 +1988,7 @@ const Stage = ({
                         </Button>
                       </td>
                     </tr>
-                    <tr>
-                      <td
-                        colSpan="2"
-                        style={{
-                          // fontWeight: "bold",
-                          textAlign: "right",
-                          backgroundColor: "#f5f5f5",
-                        }}
-                      >
-                        <strong>DORIS tool:</strong>
-                        <Button
-                          onClick={() => {
-                            detectUnderlyingCauseOfDeath();
-                          }}
-                          disabled={
-                            (currentEvent &&
-                              currentEvent.dataValues[
-                                formMapping.dataElements[
-                                  "underlyingCOD_processed_by"
-                                ]
-                              ] &&
-                              currentEvent.dataValues[
-                                formMapping.dataElements[
-                                  "underlyingCOD_processed_by"
-                                ]
-                              ] === "Manual") ||
-                            enrollmentStatus === "COMPLETED"
-                          }
-                        >
-                          {t("compute")}
-                        </Button>
-                      </td>
-                    </tr>
+
                     <tr>
                       <td
                         colSpan="2"
@@ -1992,7 +2011,7 @@ const Stage = ({
             </div>
 
             {/* New Pregnancy Status Section for G1 */}
-            {currentEvent.dataValues[
+            {currentEvent?.dataValues[
               formMapping.dataElements["period_of_death"]
             ] === "TIMING_AFTER_WEEK" &&
               currentTeiSexAttributeValue === femaleCode && (
@@ -2070,7 +2089,7 @@ const Stage = ({
           </>
         )}
         {/* G2 Section: Perinatal Death */}
-        {currentEvent.dataValues[
+        {currentEvent?.dataValues[
           formMapping.dataElements["period_of_death"]
         ] === "TIMING_WITHIN_WEEK" && (
           <div className="stage-section">
@@ -2151,12 +2170,9 @@ const Stage = ({
                   </div>
 
                   <div>
-                     <div
-                        className="field-label"
-                        style={{ fontWeight: "bold" }}
-                      >
-                        Number of previous pregnancies resulting in:
-                      </div>
+                    <div className="field-label" style={{ fontWeight: "bold" }}>
+                      Number of previous pregnancies resulting in:
+                    </div>
                     <div style={{ display: "flex", gap: "10px" }}>
                       <div className="form-field">
                         <div
@@ -2202,30 +2218,40 @@ const Stage = ({
                     </div>
                   </div>
 
-                  <div className="form-field">
-                    <div className="field-label" style={{ fontWeight: "bold" }}>
-                      Outcome of last previous pregnancy
-                    </div>
-                    <div className="field-input">
-                      {renderInputField(
-                        formMapping.dataElements["last_preg_outcome"]
-                      )}
-                    </div>
-                  </div>
+                  {calculateTotalPreviousPregnancies() > 0 && (
+                    <>
+                      <div className="form-field">
+                        <div
+                          className="field-label"
+                          style={{ fontWeight: "bold" }}
+                        >
+                          Outcome of last previous pregnancy
+                        </div>
+                        <div className="field-input">
+                          {renderInputField(
+                            formMapping.dataElements["last_preg_outcome"]
+                          )}
+                        </div>
+                      </div>
 
-                  <div className="form-field">
-                    <div className="field-label" style={{ fontWeight: "bold" }}>
-                      Date of last previous delivery
-                    </div>
-                    <div className="field-input">
-                      {renderInputField(
-                        formMapping.dataElements["previous_delivery_date"],
-                        undefined,
-                        undefined,
-                        "DISABLE_FUTURE_DATE"
-                      )}
-                    </div>
-                  </div>
+                      <div className="form-field">
+                        <div
+                          className="field-label"
+                          style={{ fontWeight: "bold" }}
+                        >
+                          Date of last previous delivery
+                        </div>
+                        <div className="field-input">
+                          {renderInputField(
+                            formMapping.dataElements["previous_delivery_date"],
+                            undefined,
+                            undefined,
+                            "DISABLE_FUTURE_DATE"
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   <div className="form-field">
                     <div className="field-label" style={{ fontWeight: "bold" }}>
@@ -2312,9 +2338,7 @@ const Stage = ({
                       This birth was
                     </div>
                     <div className="field-input">
-                      {renderInputField(
-                        formMapping.dataElements["child_birth_type"]
-                      )}
+                      {renderBirthTypeRadioGroup()}
                     </div>
                   </div>
 
@@ -2451,7 +2475,7 @@ const Stage = ({
                                   setTimeToDeath({
                                     causeId: formMapping.dataElements["codA"],
                                     causeLabel: "Immediate cause of death",
-                                    timeInterval: currentEvent.dataValues[
+                                    timeInterval: currentEvent?.dataValues[
                                       formMapping.dataElements["codA"]
                                     ]
                                       .split(",")
@@ -2528,7 +2552,7 @@ const Stage = ({
                                     causeId: formMapping.dataElements["codB"],
                                     causeLabel:
                                       "Condition leading to immediate cause",
-                                    timeInterval: currentEvent.dataValues[
+                                    timeInterval: currentEvent?.dataValues[
                                       formMapping.dataElements["codB"]
                                     ]
                                       .split(",")
@@ -2606,7 +2630,7 @@ const Stage = ({
                                     causeId: formMapping.dataElements["codC"],
                                     causeLabel:
                                       "Condition leading to previous cause",
-                                    timeInterval: currentEvent.dataValues[
+                                    timeInterval: currentEvent?.dataValues[
                                       formMapping.dataElements["codC"]
                                     ]
                                       .split(",")
@@ -2683,7 +2707,7 @@ const Stage = ({
                                   setTimeToDeath({
                                     causeId: formMapping.dataElements["codD"],
                                     causeLabel: "Underlying cause of death",
-                                    timeInterval: currentEvent.dataValues[
+                                    timeInterval: currentEvent?.dataValues[
                                       formMapping.dataElements["codD"]
                                     ]
                                       .split(",")
@@ -2748,12 +2772,12 @@ const Stage = ({
                           }}
                           disabled={
                             (currentEvent &&
-                              currentEvent.dataValues[
+                              currentEvent?.dataValues[
                                 formMapping.dataElements[
                                   "underlyingCOD_processed_by"
                                 ]
                               ] &&
-                              currentEvent.dataValues[
+                              currentEvent?.dataValues[
                                 formMapping.dataElements[
                                   "underlyingCOD_processed_by"
                                 ]
@@ -2783,6 +2807,13 @@ const Stage = ({
                     </tr>
                   </tbody>
                 </table>
+
+                <div>
+                  Other relevant circumstances:
+                  {renderInputField(
+                    formMapping.dataElements["other_relevant_circumstances"]
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -2808,7 +2839,7 @@ const Stage = ({
                   {currentEvent?.dataValues[
                     formMapping.dataElements["mannerOfDeath"]
                   ] &&
-                    currentEvent.dataValues[
+                    currentEvent?.dataValues[
                       formMapping.dataElements["mannerOfDeath"]
                     ] !== "0" && (
                       <>
