@@ -333,6 +333,7 @@ const SearchForm = ({ programMetadata, trackedEntityType, initData, initNewEnrol
                       ...pager,
                       showSizeChanger: false
                     }}
+                    scroll={{ x: 'max-content' }}
                     onChange={(newPagination, filters, sorter) => {
                       handleChangeCurrentPage(newPagination.current);
                     }}
