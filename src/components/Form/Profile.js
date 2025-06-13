@@ -109,14 +109,19 @@ const Profile = ({
   const getTeaValue = (attribute) =>
     currentTei.attributes[attribute] ? currentTei.attributes[attribute] : "";
 
-  const populateInputField = (attribute, forceCompulsory) => {
+  const populateInputField = (attribute, forceCompulsory, dateRestriction) => {
     const tea = getTeaMetadata(attribute);
     const value = getTeaValue(attribute);
     if (tea) {
+      // Special handling for date fields
+      const isDateField = tea.valueType === "DATE" || 
+                         tea.valueType === "DATE_WITH_RANGE" || 
+                         attribute === formMapping.attributes["notification_date"];
+
       return (
         <InputField
           value={value}
-          valueType={tea.valueType}
+          valueType={isDateField ? "DATE_WITH_RANGE" : tea.valueType}
           label={tea.displayFormName}
           valueSet={tea.valueSet}
           change={(newValue) => {
@@ -129,6 +134,59 @@ const Profile = ({
               }
             } else {
               mutateAttribute(tea.id, newValue);
+
+              // Calculate age when date of birth is entered
+              if (attribute === formMapping.attributes["dob"] && newValue) {
+                const age_cal = parseInt(
+                  moment(currentEnrollment.incidentDate || moment(), "YYYY-MM-DD").diff(
+                    moment(newValue, "YYYY-MM-DD"),
+                    "years",
+                    true
+                  )
+                );
+                if (age_cal > 150) {
+                  message.error("Age can't be greater than 150");
+                } else if (age_cal < 0) {
+                  message.error("Age can't be negative number");
+                } else if (!isNaN(age_cal)) {
+                  mutateAttribute(formMapping.attributes["age"], age_cal + "");
+                  if (age_cal === 0) {
+                    const age_cal_in_months = parseInt(
+                      moment(currentEnrollment.incidentDate || moment(), "YYYY-MM-DD").diff(
+                        moment(newValue, "YYYY-MM-DD"),
+                        "months",
+                        true
+                      )
+                    );
+                    if (age_cal_in_months === 0) {
+                      const age_cal_in_days = parseInt(
+                        moment(currentEnrollment.incidentDate || moment(), "YYYY-MM-DD").diff(
+                          moment(newValue, "YYYY-MM-DD"),
+                          "days",
+                          true
+                        )
+                      );
+                      mutateAttribute(
+                        formMapping.attributes["estimated_age"],
+                        age_cal_in_days + ""
+                      );
+                      mutateAttribute(formMapping.attributes["age_unit"], "P_D");
+                    } else {
+                      mutateAttribute(
+                        formMapping.attributes["estimated_age"],
+                        age_cal_in_months + ""
+                      );
+                      mutateAttribute(formMapping.attributes["age_unit"], "P_M");
+                    }
+                  } else {
+                    mutateAttribute(
+                      formMapping.attributes["estimated_age"],
+                      age_cal + ""
+                    );
+                    mutateAttribute(formMapping.attributes["age_unit"], "P_YD");
+                  }
+                }
+              }
             }
           }}
           disabled={
@@ -137,6 +195,15 @@ const Profile = ({
           }
           mandatory={
             forceCompulsory !== undefined ? forceCompulsory : tea.compulsory
+          }
+          disabledDate={
+            isDateField && dateRestriction
+              ? dateRestriction === "DISABLE_FUTURE_DATE"
+                ? (current) => current && current > moment().endOf("day")
+                : dateRestriction === "DISABLE_PAST_DATE"
+                ? (current) => current && current < moment().startOf("day")
+                : undefined
+              : undefined
           }
         />
       );
@@ -196,71 +263,61 @@ const Profile = ({
               change={(value) => {
                 console.log(value);
                 mutateAttribute(dob.id, value);
-                const age_cal = parseInt(
-                  moment(currentEnrollment.incidentDate, "YYYY-MM-DD").diff(
-                    moment(
-                      getTeaValue(formMapping.attributes["dob"]),
-                      "YYYY-MM-DD"
-                    ),
-                    "years",
-                    true
-                  )
-                );
-                if (age_cal > 150)
-                  message.error("Age can't be greater than 150");
-                else if (age_cal < 0)
-                  message.error("Age can't be negative number");
-                else if (!isNaN(age_cal)) {
-                  mutateAttribute(formMapping.attributes["age"], age_cal + "");
-                  if (age_cal === 0) {
-                    const age_cal_in_months = parseInt(
-                      moment(currentEnrollment.incidentDate, "YYYY-MM-DD").diff(
-                        moment(
-                          getTeaValue(formMapping.attributes["dob"]),
-                          "YYYY-MM-DD"
-                        ),
-                        "months",
-                        true
-                      )
-                    );
-                    if (age_cal_in_months === 0) {
-                      const age_cal_in_days = parseInt(
-                        moment(
-                          currentEnrollment.incidentDate,
-                          "YYYY-MM-DD"
-                        ).diff(
-                          moment(
-                            getTeaValue(formMapping.attributes["dob"]),
-                            "YYYY-MM-DD"
-                          ),
-                          "days",
+                if (value) {
+                  const age_cal = parseInt(
+                    moment(currentEnrollment.incidentDate || moment(), "YYYY-MM-DD").diff(
+                      moment(value, "YYYY-MM-DD"),
+                      "years",
+                      true
+                    )
+                  );
+                  if (age_cal > 150)
+                    message.error("Age can't be greater than 150");
+                  else if (age_cal < 0)
+                    message.error("Age can't be negative number");
+                  else if (!isNaN(age_cal)) {
+                    mutateAttribute(formMapping.attributes["age"], age_cal + "");
+                    if (age_cal === 0) {
+                      const age_cal_in_months = parseInt(
+                        moment(currentEnrollment.incidentDate || moment(), "YYYY-MM-DD").diff(
+                          moment(value, "YYYY-MM-DD"),
+                          "months",
                           true
                         )
                       );
-                      mutateAttribute(
-                        formMapping.attributes["estimated_age"],
-                        age_cal_in_days + ""
-                      );
-                      mutateAttribute(
-                        formMapping.attributes["age_unit"],
-                        "P_D"
-                      );
+                      if (age_cal_in_months === 0) {
+                        const age_cal_in_days = parseInt(
+                          moment(currentEnrollment.incidentDate || moment(), "YYYY-MM-DD").diff(
+                            moment(value, "YYYY-MM-DD"),
+                            "days",
+                            true
+                          )
+                        );
+                        mutateAttribute(
+                          formMapping.attributes["estimated_age"],
+                          age_cal_in_days + ""
+                        );
+                        mutateAttribute(
+                          formMapping.attributes["age_unit"],
+                          "P_D"
+                        );
+                      } else {
+                        mutateAttribute(
+                          formMapping.attributes["estimated_age"],
+                          age_cal_in_months + ""
+                        );
+                        mutateAttribute(
+                          formMapping.attributes["age_unit"],
+                          "P_M"
+                        );
+                      }
                     } else {
                       mutateAttribute(
                         formMapping.attributes["estimated_age"],
-                        age_cal_in_months + ""
+                        age_cal + ""
                       );
-                      mutateAttribute(
-                        formMapping.attributes["age_unit"],
-                        "P_M"
-                      );
+                      mutateAttribute(formMapping.attributes["age_unit"], "P_YD");
                     }
-                  } else {
-                    mutateAttribute(
-                      formMapping.attributes["estimated_age"],
-                      age_cal + ""
-                    );
-                    mutateAttribute(formMapping.attributes["age_unit"], "P_YD");
                   }
                 }
               }}
@@ -418,7 +475,7 @@ const Profile = ({
         mandatory={true}
       />
 
-      {populateInputField(formMapping.attributes["notification_date"])}
+      {populateInputField(formMapping.attributes["notification_date"], undefined, "DISABLE_FUTURE_DATE")}
 
       {/*         
         SA Custom Changes - 01/06/2025
