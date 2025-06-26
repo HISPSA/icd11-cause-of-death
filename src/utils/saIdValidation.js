@@ -76,7 +76,7 @@ export const validateSAIdNumber = (idNumber) => {
   }
   response.details.citizenshipValid = true;
 
-  // Validate checksum using Luhn algorithm
+  // Validate checksum using the correct SA algorithm
   if (!validateChecksum(idNumber)) {
     response.error = 'Invalid checksum - SA ID number appears to be incorrect';
     return response;
@@ -89,24 +89,24 @@ export const validateSAIdNumber = (idNumber) => {
 };
 
 /**
- * Validates the checksum of a SA ID number using Luhn algorithm
+ * Validates the checksum of a SA ID number using the correct SA algorithm
  * @param {string} idNumber - The 13-digit ID number
  * @returns {boolean} - True if checksum is valid
  */
 const validateChecksum = (idNumber) => {
-  // SA ID uses a modified Luhn algorithm
+  // SA ID uses a specific algorithm, not standard Luhn
   // Take first 12 digits and calculate check digit
   const first12Digits = idNumber.substring(0, 12);
   const checkDigit = parseInt(idNumber.charAt(12));
   
   let sum = 0;
-  let isEven = false;
   
-  // Process from right to left
-  for (let i = first12Digits.length - 1; i >= 0; i--) {
+  // Process from left to right (positions 0-11)
+  for (let i = 0; i < first12Digits.length; i++) {
     let digit = parseInt(first12Digits.charAt(i));
     
-    if (isEven) {
+    // Double every second digit (odd positions: 1, 3, 5, 7, 9, 11)
+    if (i % 2 === 1) {
       digit *= 2;
       if (digit > 9) {
         digit = digit.toString().split('').reduce((a, b) => parseInt(a) + parseInt(b), 0);
@@ -114,7 +114,6 @@ const validateChecksum = (idNumber) => {
     }
     
     sum += digit;
-    isEven = !isEven;
   }
   
   const calculatedCheckDigit = (10 - (sum % 10)) % 10;

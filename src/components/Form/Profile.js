@@ -303,6 +303,14 @@ const Profile = ({
     const isEstimated = getTeaMetadata(formMapping.attributes["estimated_dob"]);
     const estimatedAge = getTeaMetadata(formMapping.attributes["estimated_age"]);
     const ageUnit = getTeaMetadata(formMapping.attributes["age_unit"]);
+    
+    // Check if SA ID is valid and should disable age fields
+    const isSAId = 
+      currentTei.attributes[formMapping.attributes["identification_type"]] === "ID_TYPE_SA" &&
+      currentTei.attributes[formMapping.attributes["sa_id_number"]] &&
+      currentTei.attributes[formMapping.attributes["sa_id_number"]].length === 13 &&
+      validateSAIdNumber(currentTei.attributes[formMapping.attributes["sa_id_number"]]).isValid;
+    
     return (
       <>
         <Row justify="start" align="middle">
@@ -314,7 +322,7 @@ const Profile = ({
               change={(value) => {
                 mutateAttribute(isEstimated.id, value);
               }}
-              disabled={enrollmentStatus === "COMPLETED"}
+              disabled={enrollmentStatus === "COMPLETED" || isSAId}
             />
           </Col>
           <Col>
@@ -342,7 +350,8 @@ const Profile = ({
               disabled={
                 enrollmentStatus === "COMPLETED" ||
                 getTeaValue(formMapping.attributes["estimated_dob"]) === true ||
-                getTeaValue(formMapping.attributes["estimated_dob"]) === "true"
+                getTeaValue(formMapping.attributes["estimated_dob"]) === "true" ||
+                isSAId
               }
               mandatory={dob.compulsory}
             />
@@ -358,7 +367,8 @@ const Profile = ({
               disabled={
                 enrollmentStatus === "COMPLETED" ||
                 getTeaValue(formMapping.attributes["estimated_dob"]) === true ||
-                getTeaValue(formMapping.attributes["estimated_dob"]) === "true"
+                getTeaValue(formMapping.attributes["estimated_dob"]) === "true" ||
+                isSAId
               }
               mandatory={ageUnit.compulsory}
               change={(value) => {
@@ -421,7 +431,8 @@ const Profile = ({
               disabled={
                 enrollmentStatus === "COMPLETED" ||
                 getTeaValue(formMapping.attributes["estimated_dob"]) === true ||
-                getTeaValue(formMapping.attributes["estimated_dob"]) === "true"
+                getTeaValue(formMapping.attributes["estimated_dob"]) === "true" ||
+                isSAId
               }
               mandatory={estimatedAge.compulsory}
               change={(value) => {
