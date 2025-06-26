@@ -22,3 +22,9 @@
   color: #db9a37;
   font-weight: bold;
 }
+
+/* Success state for valid inputs */
+.input-helper.success {
+  color: #52c41a;
+  font-weight: bold;
+}

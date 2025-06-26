@@ -33,10 +33,30 @@ import {
 import { Hooks } from "tracker-capture-app-core";
 import { generateDhis2Payload } from "../../utils";
 import { useTranslation } from "react-i18next";
+import { validateSAIdNumber } from "../../utils/saIdValidation";
 
 
 const { useApi } = Hooks;
 const ButtonGroup = Button.Group;
+
+// Helper function to validate SA ID number
+const validateSAIdBeforeSave = (currentTei, formMapping) => {
+  if (currentTei.attributes[formMapping.attributes["identification_type"]] === "ID_TYPE_SA") {
+    const saIdNumber = currentTei.attributes[formMapping.attributes["sa_id_number"]];
+    
+    if (!saIdNumber) {
+      message.error("SA ID number is required!");
+      return false;
+    }
+    
+    const validation = validateSAIdNumber(saIdNumber);
+    if (!validation.isValid) {
+      message.error(validation.error);
+      return false;
+    }
+  }
+  return true;
+};
 
 const Form = ({ 
   changeRoute,
@@ -65,7 +85,8 @@ const Form = ({
   const [openCertificate, setOpenCertificate] = useState(false);
   const [certificate, setCertificate] = useState(false);
 
-  // const [doris, setDoris] = useState(false);
+  const [saIdError, setSaIdError] = useState(null);
+  const [saIdHelper, setSaIdHelper] = useState(null);
 
   useEffect(() => {
     setCertificate (
@@ -158,7 +179,17 @@ const Form = ({
           </div>
           <div className={profileSection ? "profile-section" : "profile-section-hidden"}>
             <div className="profile-content">
-              <Profile />
+              <Profile
+                saIdError={saIdError}
+                setSaIdError={setSaIdError}
+                saIdHelper={saIdHelper}
+                setSaIdHelper={setSaIdHelper}
+                mutateAttribute={mutateAttribute}
+                mutateEnrollment={mutateEnrollment}
+                mutateEvent={mutateEvent}
+                metadata={metadata}
+                data={data}
+              />
             </div>
             <div className="profile-button">
               <ButtonGroup
@@ -197,8 +228,9 @@ const Form = ({
                     // Then check identification_type dependent fields
                     if (currentTei.attributes[formMapping.attributes["identification_type"]]) {
                       if (currentTei.attributes[formMapping.attributes["identification_type"]] === "ID_TYPE_SA") {
-                        if (!currentTei.attributes[formMapping.attributes["sa_id_number"]]) {
-                          message.error("SA ID number is required!");
+                        const saIdNumber = currentTei.attributes[formMapping.attributes["sa_id_number"]];
+                        if (saIdNumber && saIdError === "This ID number already exists in the system.") {
+                          message.error(saIdError);
                           return;
                         }
                       }
@@ -423,6 +455,11 @@ const Form = ({
                     }}
                     disabled={currentTei.isNew}
                     onClick={async () => {
+                      // Validate SA ID number before completing
+                      if (!validateSAIdBeforeSave(currentTei, formMapping)) {
+                        return;
+                      }
+                      
                       if (
                         currentEvents[0] &&
                         currentEvents[0].dataValues &&
@@ -508,12 +545,12 @@ const Form = ({
                       );
                       await dataApi.pushEvents({ events: currentEvents });
                       mutateTei("isSaved", true);
-      
+            
                       // Dirty Check
                       mutateTei("isDirty", false);
                       mutateEnrollment("isDirty", false);
                       mutateEvent(currentEvents[0].event,"isDirty",false);
-      
+            
                       // Notification
                       setLoading(false);
                       message.success("Saved Successfully!");

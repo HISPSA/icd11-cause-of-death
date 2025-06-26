@@ -25,7 +25,8 @@ const InputField = (props) => {
     selectMode,
     mandatory,
     tagRender,
-    style
+    style,
+    helperSuccess
   } = props;
 
   // function disabledDate(d) {
@@ -210,7 +211,7 @@ const InputField = (props) => {
       {label && <div className="input-label">{`${label}${mandatory ? " *" : ""}`}</div>}
       <div className="input-field">{generateField()}</div>
       {error && <div className="input-error">{error}</div>}
-      {helper && <div className="input-helper">{helper}</div>}
+      {helper && <div className={`input-helper${helperSuccess ? ' success' : ''}`}>{helper}</div>}
       {warning && <div className="input-warning">{warning}</div>}
     </div>
   );
