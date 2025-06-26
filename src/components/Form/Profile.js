@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import InputField from "../InputField";
 import { Col, Row, message } from "antd";
 import moment from "moment";
@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 
 /*       */
 import { Hooks } from "tracker-capture-app-core";
+import { validateSAIdNumber, extractDateOfBirth, sanitizeSAIdInput } from "../../utils/saIdValidation";
 
 const { useApi } = Hooks;
 const Profile = ({
@@ -23,9 +24,14 @@ const Profile = ({
   mutateEvent,
   metadata,
   data,
+  saIdError,
+  setSaIdError,
+  saIdHelper,
+  setSaIdHelper,
 }) => {
   const { t } = useTranslation();
-  const { metadataApi } = useApi();
+  const { metadataApi, dataApi } = useApi();
+  
   const {
     currentTei,
     currentEnrollment,
@@ -33,6 +39,67 @@ const Profile = ({
     currentEnrollment: { status: enrollmentStatus },
   } = data;
   const { programMetadata, formMapping, fullnameOption, selectedOrgUnit } = metadata;
+
+  // Real-time SA ID validation function
+  const validateSAIdRealTime = async (idNumber) => {
+    const idType = currentTei.attributes[formMapping.attributes["identification_type"]];
+    
+    // Only validate if ID type is SA
+    if (idType !== "ID_TYPE_SA") {
+      setSaIdError(null);
+      setSaIdHelper(null);
+      return;
+    }
+    
+    // Clear error if no input
+    if (!idNumber || idNumber.trim() === '') {
+      setSaIdError(null);
+      setSaIdHelper(null);
+      return;
+    }
+    
+    // Show helper text while typing
+    if (idNumber.length > 0 && idNumber.length < 13) {
+      setSaIdHelper(`Please enter all 13 digits (${idNumber.length}/13)`);
+      setSaIdError(null);
+    } else if (idNumber.length === 13) {
+      setSaIdHelper(null);
+      const validation = validateSAIdNumber(idNumber);
+      if (!validation.isValid) {
+        setSaIdError(validation.error);
+      } else {
+        // Only check for duplicates when creating a new record
+        if (currentTei.isNew) {
+          // Check for duplicate using dataApi for proper authentication
+          setSaIdHelper("Checking for duplicates...");
+          setSaIdError(null);
+          try {
+            const response = await dataApi.pull(`/api/41/tracker/trackedEntities?program=ogrOUKoSaWA&orgUnitMode=ACCESSIBLE&filter=iS1g0uT0Dsb:EQ:${idNumber}`);
+            const isDuplicate = response.trackedEntities && response.trackedEntities.length > 0;
+            if (isDuplicate) {
+              setSaIdError("This ID number already exists in the system.");
+              setSaIdHelper(null);
+            } else {
+              setSaIdError(null);
+              setSaIdHelper("✓ Valid SA ID number");
+            }
+          } catch (error) {
+            console.error("Error checking for duplicates:", error);
+            // On error, assume not duplicate (fail open)
+            setSaIdError(null);
+            setSaIdHelper("✓ Valid SA ID number");
+          }
+        } else {
+          // For existing records, just show valid without duplicate check
+          setSaIdError(null);
+          setSaIdHelper("✓ Valid SA ID number");
+        }
+      }
+    } else {
+      setSaIdError(null);
+      setSaIdHelper(null);
+    }
+  };
 
   // Add calculateAge function
   const calculateAge = (dobValue) => {
@@ -121,24 +188,34 @@ const Profile = ({
     const saIdNumber = currentTei.attributes[formMapping.attributes["sa_id_number"]];
     const idType = currentTei.attributes[formMapping.attributes["identification_type"]];
 
-    if (idType === "ID_TYPE_SA" && saIdNumber && saIdNumber.length === 13 && /^\d+$/.test(saIdNumber)) {
-      try {
-        const year = parseInt(saIdNumber.substring(0, 2));
-        const month = saIdNumber.substring(2, 4);
-        const day = saIdNumber.substring(4, 6);
+    // Clear error when ID type changes
+    if (idType !== "ID_TYPE_SA") {
+      setSaIdError(null);
+      setSaIdHelper(null);
+    }
 
-        const fullYear = year < 50 ? 2000 + year : 1900 + year;
-        const dob = `${fullYear}-${month}-${day}`;
-
-        if (moment(dob, "YYYY-MM-DD", true).isValid()) {
-          mutateAttribute(formMapping.attributes["dob"], dob);
-          calculateAge(dob); // Call calculateAge when DOB is set from SA ID
+    if (idType === "ID_TYPE_SA" && saIdNumber) {
+      // Trigger real-time validation
+      validateSAIdRealTime(saIdNumber);
+      
+      // Only process if we have a complete 13-digit ID number
+      if (saIdNumber.length === 13) {
+        const validation = validateSAIdNumber(saIdNumber);
+        
+        if (validation.isValid) {
+          // Extract and set date of birth
+          const dobData = extractDateOfBirth(saIdNumber);
+          if (dobData) {
+            mutateAttribute(formMapping.attributes["dob"], dobData.formatted);
+            calculateAge(dobData.formatted);
+          }
+        } else {
+          // Show validation error but don't prevent form submission
+          console.warn("SA ID validation warning:", validation.error);
         }
-      } catch (error) {
-        console.error("Error processing SA ID:", error);
       }
     }
-  }, [currentTei.attributes[formMapping.attributes["sa_id_number"]]]);
+  }, [currentTei.attributes[formMapping.attributes["sa_id_number"]], currentTei.attributes[formMapping.attributes["identification_type"]]]);
 
   // Add useEffect for auto-populating health facility name
   useEffect(() => {
@@ -167,12 +244,15 @@ const Profile = ({
           valueType={isDateField ? "DATE_WITH_RANGE" : tea.valueType}
           label={tea.displayFormName}
           valueSet={tea.valueSet}
-          change={(newValue) => {
+          error={attribute === formMapping.attributes["sa_id_number"] ? saIdError : undefined}
+          helper={attribute === formMapping.attributes["sa_id_number"] ? saIdHelper : undefined}
+          helperSuccess={attribute === formMapping.attributes["sa_id_number"] && saIdHelper === "✓ Valid SA ID number"}
+          change={async (newValue) => {
             if (attribute === formMapping.attributes["sa_id_number"]) {
-              const numericValue = newValue.replace(/[^0-9]/g, "");
-              if (numericValue.length <= 13) {
-                mutateAttribute(tea.id, numericValue);
-              }
+              const sanitizedValue = sanitizeSAIdInput(newValue);
+              mutateAttribute(tea.id, sanitizedValue);
+              // Trigger real-time validation (async)
+              await validateSAIdRealTime(sanitizedValue);
             } else {
               mutateAttribute(tea.id, newValue);
 
@@ -277,10 +357,8 @@ const Profile = ({
               value={getTeaValue(formMapping.attributes["age_unit"])}
               disabled={
                 enrollmentStatus === "COMPLETED" ||
-                (getTeaValue(formMapping.attributes["estimated_dob"]) !==
-                  true &&
-                  getTeaValue(formMapping.attributes["estimated_dob"]) !==
-                    "true")
+                getTeaValue(formMapping.attributes["estimated_dob"]) === true ||
+                getTeaValue(formMapping.attributes["estimated_dob"]) === "true"
               }
               mandatory={ageUnit.compulsory}
               change={(value) => {
@@ -342,10 +420,8 @@ const Profile = ({
               value={getTeaValue(formMapping.attributes["estimated_age"])}
               disabled={
                 enrollmentStatus === "COMPLETED" ||
-                (getTeaValue(formMapping.attributes["estimated_dob"]) !==
-                  true &&
-                  getTeaValue(formMapping.attributes["estimated_dob"]) !==
-                    "true")
+                getTeaValue(formMapping.attributes["estimated_dob"]) === true ||
+                getTeaValue(formMapping.attributes["estimated_dob"]) === "true"
               }
               mandatory={estimatedAge.compulsory}
               change={(value) => {
