@@ -617,7 +617,7 @@ const Stage = ({
           disabledDate={
             isDateField && dateRestriction
               ? dateRestriction === "DISABLE_FUTURE_DATE"
-                ? (current) => current && current > moment().endOf("day")
+                ? (current) => current && current >= moment().add(1, 'day').startOf('day')
                 : dateRestriction === "DISABLE_PAST_DATE"
                 ? (current) => current && current < moment().startOf("day")
                 : undefined
@@ -1750,7 +1750,6 @@ const Stage = ({
                         </div>
                       </td>
                       <td>
-                    <h1>test</h1>
                         {renderInputField(
                           formMapping.dataElements["codB_underlying"],
                           "underlying"

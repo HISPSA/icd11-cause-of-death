@@ -273,7 +273,7 @@ const Profile = ({
           disabledDate={
             isDateField && dateRestriction
               ? dateRestriction === "DISABLE_FUTURE_DATE"
-                ? (current) => current && current > moment().endOf("day")
+                ? (current) => current && current >= moment().add(1, 'day').startOf('day')
                 : dateRestriction === "DISABLE_PAST_DATE"
                 ? (current) => current && current < moment().startOf("day")
                 : undefined
@@ -345,7 +345,7 @@ const Profile = ({
                 }
               }}
               disabledDate={(current) =>
-                current && current >= moment().startOf("day")
+                current && current >= moment().add(1, 'day').startOf('day')
               }
               disabled={
                 enrollmentStatus === "COMPLETED" ||
@@ -489,7 +489,7 @@ const Profile = ({
         value={currentEnrollment.enrollmentDate || ""}
         label={t("reportedDate")}
         valueType={"DATE_WITH_RANGE"}
-        disabledDate={(current) => current && current > moment().endOf("day")}
+        disabledDate={(current) => current && current >= moment().add(1, 'day').startOf('day')}
         change={(value) => {
           mutateEnrollment("enrollmentDate", value);
         }}
@@ -510,7 +510,7 @@ const Profile = ({
         value={currentEnrollment.incidentDate || ""}
         label={t("incidentDate")}
         valueType={"DATE_WITH_RANGE"}
-        disabledDate={(current) => current && current > moment().endOf("day")}
+        disabledDate={(current) => current && current >= moment().add(1, 'day').startOf('day')}
         change={(value) => {
           mutateEnrollment("incidentDate", value);
           currentEvents.forEach((event) => {

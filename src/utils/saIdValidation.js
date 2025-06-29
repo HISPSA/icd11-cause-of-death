@@ -51,7 +51,21 @@ export const validateSAIdNumber = (idNumber) => {
   const citizenship = parseInt(idNumber.substring(10, 11));
 
   // Validate date of birth
-  const fullYear = year < 50 ? 2000 + year : 1900 + year;
+  // Get current year to determine century
+  const currentYear = new Date().getFullYear();
+  const currentCentury = Math.floor(currentYear / 100) * 100;
+  const currentYearInCentury = currentYear % 100;
+  
+  // Determine century for the birth year
+  let fullYear;
+  if (year <= currentYearInCentury) {
+    // If the year is less than or equal to current year in century, use current century
+    fullYear = currentCentury + year;
+  } else {
+    // If the year is greater than current year in century, use previous century
+    fullYear = (currentCentury - 100) + year;
+  }
+  
   const date = new Date(fullYear, month - 1, day);
   
   if (date.getFullYear() !== fullYear || 
@@ -136,7 +150,20 @@ export const extractDateOfBirth = (idNumber) => {
   const month = parseInt(idNumber.substring(2, 4));
   const day = parseInt(idNumber.substring(4, 6));
   
-  const fullYear = year < 50 ? 2000 + year : 1900 + year;
+  // Get current year to determine century
+  const currentYear = new Date().getFullYear();
+  const currentCentury = Math.floor(currentYear / 100) * 100;
+  const currentYearInCentury = currentYear % 100;
+  
+  // Determine century for the birth year
+  let fullYear;
+  if (year <= currentYearInCentury) {
+    // If the year is less than or equal to current year in century, use current century
+    fullYear = currentCentury + year;
+  } else {
+    // If the year is greater than current year in century, use previous century
+    fullYear = (currentCentury - 100) + year;
+  }
   
   return {
     year: fullYear,
