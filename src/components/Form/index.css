@@ -188,3 +188,9 @@
   /* color: #ffffff; */
   margin-top: 15px;
 }
+
+/* Red asterisk for mandatory fields */
+.mandatory-asterisk {
+  color: #ff584d;
+  font-weight: bold;
+}

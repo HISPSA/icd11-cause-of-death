@@ -208,7 +208,12 @@ const InputField = (props) => {
 
   return (
     <div className="input-container">
-      {label && <div className="input-label">{`${label}${mandatory ? " *" : ""}`}</div>}
+      {label && (
+        <div className="input-label">
+          {label}
+          {mandatory && <span className="mandatory-asterisk"> *</span>}
+        </div>
+      )}
       <div className="input-field">{generateField()}</div>
       {error && <div className="input-error">{error}</div>}
       {helper && <div className={`input-helper${helperSuccess ? ' success' : ''}`}>{helper}</div>}

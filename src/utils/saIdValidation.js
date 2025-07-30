@@ -47,7 +47,7 @@ export const validateSAIdNumber = (idNumber) => {
   const year = parseInt(idNumber.substring(0, 2));
   const month = parseInt(idNumber.substring(2, 4));
   const day = parseInt(idNumber.substring(4, 6));
-  const gender = parseInt(idNumber.substring(6, 7));
+  const genderSequence = parseInt(idNumber.substring(6, 10));
   const citizenship = parseInt(idNumber.substring(10, 11));
 
   // Validate date of birth
@@ -76,9 +76,9 @@ export const validateSAIdNumber = (idNumber) => {
   }
   response.details.dateValid = true;
 
-  // Validate gender digit (must be 0-9)
-  if (gender < 0 || gender > 9) {
-    response.error = 'Invalid gender digit in SA ID number';
+  // Validate gender sequence (must be 0000-9999)
+  if (genderSequence < 0 || genderSequence > 9999) {
+    response.error = 'Invalid gender sequence in SA ID number';
     return response;
   }
   response.details.genderValid = true;
@@ -185,8 +185,11 @@ export const extractGender = (idNumber) => {
     return null;
   }
   
-  const gender = parseInt(idNumber.substring(6, 7));
-  return gender >= 5 ? 'Male' : 'Female';
+  // Extract the 4-digit gender sequence (positions 6-9)
+  const genderSequence = parseInt(idNumber.substring(6, 10));
+  
+  // Females are assigned numbers in the range 0000-4999 and males from 5000-9999
+  return genderSequence >= 5000 ? 'Male' : 'Female';
 };
 
 /**

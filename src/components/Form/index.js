@@ -44,11 +44,25 @@ const validateSAIdBeforeSave = (currentTei, formMapping) => {
   if (currentTei.attributes[formMapping.attributes["identification_type"]] === "ID_TYPE_SA") {
     const saIdNumber = currentTei.attributes[formMapping.attributes["sa_id_number"]];
     
-    if (!saIdNumber) {
+    // Check if SA ID number is provided
+    if (!saIdNumber || saIdNumber.trim() === '') {
       message.error("SA ID number is required!");
       return false;
     }
     
+    // Check if SA ID number is exactly 13 digits
+    if (saIdNumber.length !== 13) {
+      message.error("SA ID number must be exactly 13 digits!");
+      return false;
+    }
+    
+    // Check if SA ID number contains only digits
+    if (!/^\d+$/.test(saIdNumber)) {
+      message.error("SA ID number must contain only digits!");
+      return false;
+    }
+    
+    // Validate SA ID number format and checksum
     const validation = validateSAIdNumber(saIdNumber);
     if (!validation.isValid) {
       message.error(validation.error);
@@ -229,7 +243,34 @@ const Form = ({
                     if (currentTei.attributes[formMapping.attributes["identification_type"]]) {
                       if (currentTei.attributes[formMapping.attributes["identification_type"]] === "ID_TYPE_SA") {
                         const saIdNumber = currentTei.attributes[formMapping.attributes["sa_id_number"]];
-                        if (saIdNumber && saIdError === "This ID number already exists in the system.") {
+                        
+                        // Check if SA ID number is provided
+                        if (!saIdNumber || saIdNumber.trim() === '') {
+                          message.error("SA ID number is required!");
+                          return;
+                        }
+                        
+                        // Check if SA ID number is exactly 13 digits
+                        if (saIdNumber.length !== 13) {
+                          message.error("SA ID number must be exactly 13 digits!");
+                          return;
+                        }
+                        
+                        // Check if SA ID number contains only digits
+                        if (!/^\d+$/.test(saIdNumber)) {
+                          message.error("SA ID number must contain only digits!");
+                          return;
+                        }
+                        
+                        // Validate SA ID number format and checksum
+                        const validation = validateSAIdNumber(saIdNumber);
+                        if (!validation.isValid) {
+                          message.error(validation.error);
+                          return;
+                        }
+                        
+                        // Check for duplicate SA ID number
+                        if (saIdError === "This ID number already exists in the system.") {
                           message.error(saIdError);
                           return;
                         }
@@ -513,6 +554,11 @@ const Form = ({
                   }}
                   disabled={currentTei.isNew}
                   onClick={async () => {
+                    // Validate SA ID number before saving
+                    if (!validateSAIdBeforeSave(currentTei, formMapping)) {
+                      return;
+                    }
+                    
                     if (
                       currentEvents[0] &&
                         currentEvents[0].dataValues &&

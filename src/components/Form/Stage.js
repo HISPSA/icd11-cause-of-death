@@ -41,6 +41,27 @@ const Stage = ({
   const [timeToDeath, setTimeToDeath] = useState(null);
   const [timeToDeathModal, setTimeToDeathModal] = useState(false);
 
+  // Helper function to get text field mapping
+  const getTextFieldMapping = () => ({
+    [formMapping.dataElements["codA"]]: formMapping.dataElements["cod_a_text"],
+    [formMapping.dataElements["codB"]]: formMapping.dataElements["cod_b_text"],
+    [formMapping.dataElements["codC"]]: formMapping.dataElements["cod_c_text"],
+    [formMapping.dataElements["codD"]]: formMapping.dataElements["cod_d_text"],
+    [formMapping.dataElements["codO"]]: formMapping.dataElements["cod_other_text"],
+  });
+
+  // Helper function to extract text from code value using icd11Options
+  const extractTextFromCode = (codeValue) => {
+    if (!codeValue || codeValue === "") return "";
+    
+    return codeValue.split(",").map(code => {
+      const codePart = code.split(" (")[0];
+      // Find the option in icd11Options to get the proper text
+      const option = icd11Options.find(opt => opt.code === codePart);
+      return option ? option.name : codePart;
+    }).join(", ");
+  };
+
   const {
     currentEnrollment,
     currentTei: { attributes },
@@ -311,6 +332,20 @@ const Stage = ({
         activeCauseOfDeath.entityId,
         cod[activeCauseOfDeath.code].entityId
       );
+
+      // Auto-populate the corresponding text field
+      const codeValue = cod[activeCauseOfDeath.code].code;
+      if (codeValue && codeValue !== "") {
+        const textFieldMapping = getTextFieldMapping();
+        const textFieldId = textFieldMapping[activeCauseOfDeath.code];
+        
+        if (textFieldId) {
+          const textValue = extractTextFromCode(codeValue);
+          if (textValue && textValue.trim() !== "") {
+            mutateDataValue(currentEvent?.event, textFieldId, textValue);
+          }
+        }
+      }
 
       // RESET activeCauseOfDeath
       setActiveCauseOfDeath("");
@@ -723,6 +758,13 @@ const Stage = ({
             // causeOfDeaths[codCode].label = "";
             causeOfDeaths[codCode].underlying = false;
             setCauseOfDeaths({ ...causeOfDeaths });
+            
+            // Clear the corresponding text field
+            const textFieldMapping = getTextFieldMapping();
+            const textFieldId = textFieldMapping[codCode];
+            if (textFieldId) {
+              mutateDataValue(currentEvent?.event, textFieldId, "");
+            }
           }
 
           let dataValues_codEntityId =
@@ -774,6 +816,26 @@ const Stage = ({
             codEntityId,
             dataValues_codEntityId.join(",")
           );
+
+          // Update the corresponding text field
+          const textFieldMapping = getTextFieldMapping();
+          const textFieldId = textFieldMapping[codCode];
+          
+          if (textFieldId && value.length > 0) {
+            const textValue = value.map(code => {
+              const codePart = code.split(" (")[0];
+              // Find the option in icd11Options to get the proper text
+              const option = icd11Options.find(opt => opt.code === codePart);
+              return option ? option.name : codePart;
+            }).join(", ");
+            
+            if (textValue && textValue.trim() !== "") {
+              mutateDataValue(currentEvent?.event, textFieldId, textValue);
+            }
+          } else if (textFieldId) {
+            // Clear text field if no codes
+            mutateDataValue(currentEvent?.event, textFieldId, "");
+          }
 
           setCauseOfDeaths({ ...causeOfDeaths });
           setUnderlyingResult("");
@@ -1531,6 +1593,21 @@ const Stage = ({
                     selectedCod.uri.split("/").length - 1
                   ]
                 }`;
+          
+          // Update the corresponding text field
+          const textFieldMapping = getTextFieldMapping();
+          const textFieldId = textFieldMapping[activeCauseOfDeath.code];
+          
+          if (textFieldId) {
+            const currentCodeValue = causeOfDeaths[activeCauseOfDeath.code].code;
+            if (currentCodeValue && currentCodeValue !== "") {
+              const textValue = extractTextFromCode(currentCodeValue);
+              if (textValue && textValue.trim() !== "") {
+                mutateDataValue(currentEvent?.event, textFieldId, textValue);
+              }
+            }
+          }
+          
           setValueIcdField(causeOfDeaths);
           setCauseOfDeaths({ ...causeOfDeaths });
           setUnderlyingResult("");
@@ -2905,8 +2982,32 @@ const Stage = ({
             </div>
           </div>
         )}
-        {/* ...existing code for other sections... */}
+        
       </div>
+
+      <div style={{display: "none"}}>
+{/* hidden section */}
+<p>text field a</p>
+{renderInputField(
+  formMapping.dataElements["cod_a_text"]
+)}
+<p>text field b</p>
+{renderInputField(
+  formMapping.dataElements["cod_b_text"]
+)}
+<p>text field c</p>
+{renderInputField(
+  formMapping.dataElements["cod_c_text"]
+)}
+<p>text field d</p>
+{renderInputField(
+  formMapping.dataElements["cod_d_text"]
+)}
+<p>text field other</p>
+{renderInputField(
+  formMapping.dataElements["cod_other_text"]
+)}
+        </div>
     </>
   );
 };

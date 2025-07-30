@@ -86,6 +86,27 @@ console.log('Citizenship:', citizenship);
 const formatted = formatSAIdNumber(validId);
 console.log('Formatted:', formatted);
 
+// Test gender extraction specifically
+console.log('\n=== Gender Extraction Tests ===\n');
+
+const genderTestCases = [
+  { id: '8001010000087', expected: 'Female', description: 'Female (0000-4999 range)' },
+  { id: '8001014999087', expected: 'Female', description: 'Female (0000-4999 range)' },
+  { id: '8001015000087', expected: 'Male', description: 'Male (5000-9999 range)' },
+  { id: '8001019999087', expected: 'Male', description: 'Male (5000-9999 range)' }
+];
+
+genderTestCases.forEach((testCase, index) => {
+  console.log(`Gender Test ${index + 1}: ${testCase.description}`);
+  console.log(`ID: ${testCase.id}`);
+  
+  const result = extractGender(testCase.id);
+  console.log(`Extracted Gender: ${result}`);
+  console.log(`Expected: ${testCase.expected}`);
+  console.log(`Test ${result === testCase.expected ? 'PASSED' : 'FAILED'}`);
+  console.log('---\n');
+});
+
 // Test sanitization
 console.log('\n=== Sanitization Tests ===\n');
 
