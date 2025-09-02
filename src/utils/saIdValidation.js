@@ -135,11 +135,12 @@ const validateChecksum = (idNumber) => {
 };
 
 /**
- * Extracts date of birth from SA ID number
+ * Extracts date of birth from SA ID number with smart century detection
  * @param {string} idNumber - The 13-digit ID number
- * @returns {Object|null} - Object with year, month, day or null if invalid
+ * @param {boolean} over100 - Whether the person is over 100 years old
+ * @returns {Object|null} - Object with year, month, day, both possible dates, and century ambiguity flag
  */
-export const extractDateOfBirth = (idNumber) => {
+export const extractDateOfBirth = (idNumber, over100 = false) => {
   const validation = validateSAIdNumber(idNumber);
   
   if (!validation.isValid) {
@@ -155,21 +156,50 @@ export const extractDateOfBirth = (idNumber) => {
   const currentCentury = Math.floor(currentYear / 100) * 100;
   const currentYearInCentury = currentYear % 100;
   
-  // Determine century for the birth year
+  // Calculate both possible dates for century ambiguity
+  const date19XX = `${1900 + year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+  const date20XX = `${2000 + year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+  
   let fullYear;
-  if (year <= currentYearInCentury) {
-    // If the year is less than or equal to current year in century, use current century
-    fullYear = currentCentury + year;
+  let hasCenturyAmbiguity = false;
+  
+  if (over100) {
+    // If over100 is checked, always use 19th century
+    fullYear = 1900 + year;
+    hasCenturyAmbiguity = false;
   } else {
-    // If the year is greater than current year in century, use previous century
-    fullYear = (currentCentury - 100) + year;
+    // Smart century detection logic
+    const date19XXObj = new Date(date19XX);
+    const date20XXObj = new Date(date20XX);
+    
+    // Check if 20XX date would be in the future
+    const is20XXFuture = date20XXObj > new Date();
+    
+    if (is20XXFuture) {
+      // If 20XX date is in the future, use 19XX (19th century)
+      fullYear = 1900 + year;
+      hasCenturyAmbiguity = false;
+    } else if (year <= currentYearInCentury) {
+      // If the year is less than or equal to current year in century, use current century
+      fullYear = currentCentury + year;
+      hasCenturyAmbiguity = year <= currentYearInCentury && year > currentYearInCentury - 100;
+    } else {
+      // If the year is greater than current year in century, use previous century
+      fullYear = (currentCentury - 100) + year;
+      hasCenturyAmbiguity = false;
+    }
   }
   
   return {
     year: fullYear,
     month: month,
     day: day,
-    formatted: `${fullYear}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
+    formatted: `${fullYear}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`,
+    date19XX: date19XX,
+    date20XX: date20XX,
+    hasCenturyAmbiguity: hasCenturyAmbiguity,
+    // For backward compatibility
+    centuryAmbiguity: hasCenturyAmbiguity
   };
 };
 

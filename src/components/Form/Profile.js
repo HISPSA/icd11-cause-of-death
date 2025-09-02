@@ -33,6 +33,10 @@ const Profile = ({
   setSaIdError,
   saIdHelper,
   setSaIdHelper,
+  barcodeError,
+  setBarcodeError,
+  barcodeHelper,
+  setBarcodeHelper,
 }) => {
   const { t } = useTranslation();
   const { metadataApi, dataApi } = useApi();
@@ -206,6 +210,8 @@ const Profile = ({
       currentTei.attributes[formMapping.attributes["sa_id_number"]];
     const idType =
       currentTei.attributes[formMapping.attributes["identification_type"]];
+    const over100 = currentTei.attributes[formMapping.attributes["over100"]] === "true" || 
+                   currentTei.attributes[formMapping.attributes["over100"]] === true;
 
     // Clear error when ID type changes
     if (idType !== "ID_TYPE_SA") {
@@ -222,11 +228,43 @@ const Profile = ({
         const validation = validateSAIdNumber(saIdNumber);
 
         if (validation.isValid) {
-          // Extract and set date of birth
-          const dobData = extractDateOfBirth(saIdNumber);
+          // Extract and set date of birth with over100 parameter
+          const dobData = extractDateOfBirth(saIdNumber, over100);
           if (dobData) {
             mutateAttribute(formMapping.attributes["dob"], dobData.formatted);
             calculateAge(dobData.formatted);
+            
+            // Auto-check over100 if 20XX date would be in the future
+            if (!over100 && dobData.date20XX) {
+              const date20XXObj = new Date(dobData.date20XX);
+              const is20XXFuture = date20XXObj > new Date();
+              
+              if (is20XXFuture) {
+                // Automatically check the over100 checkbox
+                mutateAttribute(formMapping.attributes["over100"], "true");
+                setSaIdHelper("✓ Valid SA ID number - Automatically detected as 19th century (future date)");
+              }
+            }
+            
+            // Show appropriate helper message based on over100 status
+            if (over100) {
+              setSaIdHelper("✓ Valid SA ID number - Using 19th century (1900s)");
+            } else if (dobData.hasCenturyAmbiguity) {
+              // Check if the calculated age suggests they might be over 100
+              const calculatedAge = moment(currentEnrollment.incidentDate || moment(), "YYYY-MM-DD").diff(
+                moment(dobData.formatted, "YYYY-MM-DD"),
+                "years",
+                true
+              );
+              
+              if (calculatedAge >= 100) {
+                setSaIdHelper("⚠️ Age calculated as " + Math.floor(calculatedAge) + " years - Consider checking 'Over 100' if born in 1900s");
+              } else {
+                setSaIdHelper("✓ Valid SA ID number - Using 21st century (2000s) - Check 'Over 100' if born in 1900s");
+              }
+            } else {
+              setSaIdHelper("✓ Valid SA ID number");
+            }
           }
 
           // Extract and set gender from SA ID number
@@ -246,7 +284,38 @@ const Profile = ({
   }, [
     currentTei.attributes[formMapping.attributes["sa_id_number"]],
     currentTei.attributes[formMapping.attributes["identification_type"]],
+    currentTei.attributes[formMapping.attributes["over100"]],
   ]);
+
+  // Add useEffect for over100 checkbox changes to recalculate age
+  useEffect(() => {
+    const saIdNumber =
+      currentTei.attributes[formMapping.attributes["sa_id_number"]];
+    const idType =
+      currentTei.attributes[formMapping.attributes["identification_type"]];
+    const over100 = currentTei.attributes[formMapping.attributes["over100"]] === "true" || 
+                   currentTei.attributes[formMapping.attributes["over100"]] === true;
+
+    // Only recalculate if we have a valid SA ID and the over100 checkbox changed
+    if (idType === "ID_TYPE_SA" && saIdNumber && saIdNumber.length === 13) {
+      const validation = validateSAIdNumber(saIdNumber);
+      if (validation.isValid) {
+        // Recalculate DOB and age with new over100 value
+        const dobData = extractDateOfBirth(saIdNumber, over100);
+        if (dobData) {
+          mutateAttribute(formMapping.attributes["dob"], dobData.formatted);
+          calculateAge(dobData.formatted);
+          
+          // Update helper message to show age recalculation
+          if (over100) {
+            setSaIdHelper("✓ Age recalculated using 19th century (1900s)");
+          } else {
+            setSaIdHelper("✓ Age recalculated using 21st century (2000s)");
+          }
+        }
+      }
+    }
+  }, [currentTei.attributes[formMapping.attributes["over100"]]]);
 
   // Add useEffect for auto-populating health facility name
   useEffect(() => {
@@ -568,7 +637,95 @@ const Profile = ({
         Sort Order
     */}
       {populateInputField(formMapping.attributes["system_id"])}
-      {populateInputField(formMapping.attributes["barcode_number"])}
+      {populateInputField(formMapping.attributes["type_of_death_reg_no"], true)}
+      
+      {/* Conditional barcode field - only show if DHA is selected */}
+      {currentTei.attributes[formMapping.attributes["type_of_death_reg_no"]] === "DHA" && (
+        <InputField
+          value={getTeaValue(formMapping.attributes["barcode_number"])}
+          valueType={getTeaMetadata(formMapping.attributes["barcode_number"]).valueType}
+          label={getTeaMetadata(formMapping.attributes["barcode_number"]).displayFormName}
+          valueSet={getTeaMetadata(formMapping.attributes["barcode_number"]).valueSet}
+          error={barcodeError}
+          helper={barcodeHelper}
+          helperSuccess={barcodeHelper === "✓ Valid Barcode"}
+          change={async (newValue) => {
+            // If DHA is selected, prefix with 1663
+            if (currentTei.attributes[formMapping.attributes["type_of_death_reg_no"]] === "DHA") {
+              // Get current value to compare
+              const currentValue = getTeaValue(formMapping.attributes["barcode_number"]);
+              
+              // If the field already has the prefix and user is trying to delete it
+              if (currentValue && currentValue.startsWith("1663") && newValue.length < currentValue.length) {
+                // Prevent deletion of the prefix - keep at least "1663"
+                if (newValue.length < 4) {
+                  // If trying to delete the prefix, keep it
+                  mutateAttribute(formMapping.attributes["barcode_number"], "1663");
+                } else {
+                  // Allow deletion of characters after the prefix
+                  mutateAttribute(formMapping.attributes["barcode_number"], newValue);
+                }
+              }
+              // Only add prefix for completely new input that doesn't already have it
+              else if (newValue && !newValue.startsWith("1663") && (!currentValue || currentValue === "")) {
+                const prefixedValue = `1663${newValue}`;
+                mutateAttribute(formMapping.attributes["barcode_number"], prefixedValue);
+              } else {
+                // For all other cases, use the value as-is
+                mutateAttribute(formMapping.attributes["barcode_number"], newValue);
+              }
+
+              // Check for duplicates when barcode is complete (has prefix and additional characters)
+              if (newValue && newValue.startsWith("1663") && newValue.length > 4) {
+                // Only check for duplicates when creating a new record
+                if (currentTei.isNew) {
+                  setBarcodeHelper("Checking for duplicates...");
+                  setBarcodeError(null);
+                  try {
+                    const response = await dataApi.pull(
+                      `/api/41/tracker/trackedEntities?program=ogrOUKoSaWA&orgUnitMode=ACCESSIBLE&filter=W6xJ4DSHKg7:EQ:${newValue}`
+                    );
+                    const isDuplicate =
+                      response.trackedEntities && response.trackedEntities.length > 0;
+                    if (isDuplicate) {
+                      setBarcodeError("This barcode number already exists in the system.");
+                      setBarcodeHelper(null);
+                    } else {
+                      setBarcodeError(null);
+                      setBarcodeHelper("✓ Valid Barcode");
+                    }
+                  } catch (error) {
+                    console.error("Error checking for barcode duplicates:", error);
+                    // On error, assume not duplicate (fail open)
+                    setBarcodeError(null);
+                    setBarcodeHelper("✓ Valid Barcode");
+                  }
+                } else {
+                  // For existing records, just show valid without duplicate check
+                  setBarcodeError(null);
+                  setBarcodeHelper("✓ Valid Barcode");
+                }
+              } else if (newValue && newValue.startsWith("1663") && newValue.length <= 4) {
+                // Show helper text while typing (after prefix but before complete)
+                setBarcodeHelper("Please enter additional characters after the prefix");
+                setBarcodeError(null);
+              } else if (!newValue || newValue === "") {
+                // Clear validation when field is empty
+                setBarcodeError(null);
+                setBarcodeHelper(null);
+              }
+            } else {
+              mutateAttribute(formMapping.attributes["barcode_number"], newValue);
+            }
+          }}
+          disabled={
+            enrollmentStatus === "COMPLETED" ||
+            getTeaMetadata(formMapping.attributes["barcode_number"]).id ===
+              formMapping.attributes["name_of_health_facility_practice"]
+          }
+          mandatory={true}
+        />
+      )}
 
       <InputField
         value={currentEnrollment.incidentDate || ""}
@@ -726,6 +883,34 @@ const Profile = ({
         .slice(0, 3)
         .map((attribute) => populateInputField(attribute))} */}
 
+      {/* Over 100 checkbox with custom handling - only show for SA ID */}
+      {currentTei.attributes[formMapping.attributes["identification_type"]] === "ID_TYPE_SA" && (() => {
+        const over100Tea = getTeaMetadata(formMapping.attributes["over100"]);
+        if (over100Tea) {
+          return (
+            <InputField
+              value={getTeaValue(formMapping.attributes["over100"])}
+              valueType={over100Tea.valueType}
+              valueSet={over100Tea.valueSet}
+              label={`${over100Tea.displayFormName} (Check if person was born in 1900s)`}
+              change={(newValue) => {
+                mutateAttribute(over100Tea.id, newValue);
+                
+                // Show helpful message when manually checked
+                if (newValue === true || newValue === "true") {
+                  setSaIdHelper("✓ Over 100 checkbox checked - Age will be recalculated using 19th century");
+                } else {
+                  // Clear helper message when unchecked
+                  setSaIdHelper(null);
+                }
+              }}
+              disabled={enrollmentStatus === "COMPLETED"}
+              mandatory={over100Tea.compulsory}
+            />
+          );
+        }
+        return null;
+      })()}
       {renderDOBGroup()}
       {populateInputField(formMapping.attributes["sex"])}
       {fullnameOption !== "noname" &&
@@ -766,6 +951,18 @@ const Profile = ({
         populateInputField(
           formMapping.attributes["place_of_death_other_specify"]
         )}
+
+
+      {/* Only show ward_clinical_service when place_of_death is PLACE_DEATH_HOSPITAL_INPATIENT */}
+      {currentTei.attributes[formMapping.attributes["place_of_death"]] === "PLACE_DEATH_HOSPITAL_INPATIENT" && (
+        <>
+          {populateInputField(formMapping.attributes["ward_clinical_service"])}
+          
+          {/* Only show other_ward_clinical_service when ward_clinical_service is WARD_OTHER */}
+          {currentTei.attributes[formMapping.attributes["ward_clinical_service"]] === "WARD_OTHER" &&
+            populateInputField(formMapping.attributes["other_ward_clinical_service"])}
+        </>
+      )}
 
       {populateInputField(
         formMapping.attributes["name_of_health_facility_practice"]

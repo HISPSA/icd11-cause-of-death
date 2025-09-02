@@ -196,7 +196,11 @@
     "identification_type": "GABERrLTZHY",
     "type_of_fileno": "XUO5t3HAq4i",
     "HPRN_no": "xmaRdV85Pcy",
-    "notification_date": "GNw0hYo1hs3"
+    "notification_date": "GNw0hYo1hs3",
+    "type_of_death_reg_no": "elWETSBZoNw",
+    "ward_clinical_service": "yck5q7kRSXf",
+    "other_ward_clinical_service": "KMmt0KsPGQM",
+    "over100": "PUb1m9q6Ek7"
   },
   "dataElements": {
     "codA": "RU1KXNWlT6S",
@@ -296,7 +300,11 @@
     "cod_b_text": "zf0NNscwmZZ",
     "cod_c_text": "qs8fONP4Jk3",
     "cod_d_text": "CzU6X1AlxFR",
-    "cod_other_text": "CkVCE370ork"
+    "cod_other_text": "CkVCE370ork",
+
+    "type_of_stillbirth":"SgLgUltrg2C"
+
+    
   },
   "programStage": "WlWJt4lVSWw",
   "otherSections": {},

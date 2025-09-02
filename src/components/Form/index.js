@@ -101,6 +101,8 @@ const Form = ({
 
   const [saIdError, setSaIdError] = useState(null);
   const [saIdHelper, setSaIdHelper] = useState(null);
+  const [barcodeError, setBarcodeError] = useState(null);
+  const [barcodeHelper, setBarcodeHelper] = useState(null);
 
   useEffect(() => {
     setCertificate (
@@ -198,6 +200,10 @@ const Form = ({
                 setSaIdError={setSaIdError}
                 saIdHelper={saIdHelper}
                 setSaIdHelper={setSaIdHelper}
+                barcodeError={barcodeError}
+                setBarcodeError={setBarcodeError}
+                barcodeHelper={barcodeHelper}
+                setBarcodeHelper={setBarcodeHelper}
                 mutateAttribute={mutateAttribute}
                 mutateEnrollment={mutateEnrollment}
                 mutateEvent={mutateEvent}
@@ -282,12 +288,33 @@ const Form = ({
                           return;
                         }
                       }
+
+                      // Check for barcode duplicates when DHA is selected
+                      if (currentTei.attributes[formMapping.attributes["type_of_death_reg_no"]] === "DHA") {
+                        if (!currentTei.attributes[formMapping.attributes["barcode_number"]]) {
+                          message.error("Barcode number is required for DHA!");
+                          return;
+                        }
+                        if (barcodeError) {
+                          message.error(barcodeError);
+                          return;
+                        }
+                      }
                     }
 
                     // Then proceed with existing compulsory field checks
                     if ( 
-                      programMetadata.trackedEntityAttributes.filter( ({compulsory}) => compulsory )
-                      .every( ({id}) => currentTei.attributes[id] && currentTei.attributes[id] !== "" )
+                      programMetadata.trackedEntityAttributes
+                        .filter( ({compulsory}) => compulsory )
+                        .filter( ({id}) => {
+                          // Exclude barcode field if DOA is selected (since it's hidden)
+                          if (id === formMapping.attributes["barcode_number"] && 
+                              currentTei.attributes[formMapping.attributes["type_of_death_reg_no"]] === "DOA") {
+                            return false;
+                          }
+                          return true;
+                        })
+                        .every( ({id}) => currentTei.attributes[id] && currentTei.attributes[id] !== "" )
                       && currentEnrollment['enrollmentDate'] && currentEnrollment.enrollmentDate !== ""
                       && currentEnrollment['incidentDate'] && currentEnrollment['incidentDate'] !== ""
                     ) {
@@ -320,6 +347,36 @@ const Form = ({
                       message.success("Profile is saved successfully!")
                     }
                     else {
+                      // Debug: Log which fields are missing
+                      console.log("=== MISSING COMPULSORY FIELDS DEBUG ===");
+                      
+                      // Check tracked entity attributes
+                      const missingAttributes = programMetadata.trackedEntityAttributes
+                        .filter(({compulsory}) => compulsory)
+                        .filter(({id}) => !currentTei.attributes[id] || currentTei.attributes[id] === "");
+                      
+                      if (missingAttributes.length > 0) {
+                        console.log("Missing compulsory attributes:", missingAttributes.map(attr => ({
+                          id: attr.id,
+                          name: attr.name,
+                          value: currentTei.attributes[attr.id]
+                        })));
+                      }
+                      
+                      // Check enrollment date
+                      if (!currentEnrollment['enrollmentDate'] || currentEnrollment.enrollmentDate === "") {
+                        console.log("Missing enrollmentDate:", currentEnrollment['enrollmentDate']);
+                      }
+                      
+                      // Check incident date
+                      if (!currentEnrollment['incidentDate'] || currentEnrollment['incidentDate'] === "") {
+                        console.log("Missing incidentDate:", currentEnrollment['incidentDate']);
+                      }
+                      
+                      console.log("Current TEI attributes:", currentTei.attributes);
+                      console.log("Current enrollment:", currentEnrollment);
+                      console.log("=== END DEBUG ===");
+                      
                       message.error("All compulsory fields must be filled!")
                     }
                   }}

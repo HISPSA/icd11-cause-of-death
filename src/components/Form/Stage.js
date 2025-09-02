@@ -2401,6 +2401,38 @@ const Stage = ({
                     </div>
                   </div>
 
+
+
+                  {/* Only show type_of_stillbirth when child_type_of_death is TYPE_DEATH_STILL */}
+                  {currentEvent?.dataValues[formMapping.dataElements["child_type_of_death"]] === "TYPE_DEATH_STILL" && (
+                    <div className="form-field">
+                      <div className="field-label" style={{ fontWeight: "bold" }}>
+                        Type of Stillbirth
+                      </div>
+                      <div className="field-input">
+                        <Radio.Group
+                          value={
+                            currentEvent?.dataValues[
+                              formMapping.dataElements["type_of_stillbirth"]
+                            ] || ""
+                          }
+                          onChange={(e) => {
+                            mutateDataValue(
+                              currentEvent?.event,
+                              formMapping.dataElements["type_of_stillbirth"],
+                              e.target.value
+                            );
+                          }}
+                          disabled={enrollmentStatus === "COMPLETED"}
+                        >
+                          <Radio value="STILLBIRTH_FRESH">Fresh Stillbirth</Radio>
+                          <Radio value="STILLBIRTH_MACERATED">Maceration</Radio>
+                          <Radio value="STILLBIRTH_OTHER">Other</Radio>
+                        </Radio.Group>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="form-field">
                     <div className="field-label" style={{ fontWeight: "bold" }}>
                       Birth weight (grams)
