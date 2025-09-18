@@ -663,6 +663,42 @@ const Stage = ({
     );
   };
 
+  // Render Radio Buttons dynamically with options from API
+  const renderRadioButtons = (
+    de,
+    extraFunction,
+    placeholder
+  ) => {
+    const foundDe = programStage.dataElements.find(
+      (dataElement) => dataElement.id === de
+    );
+    if (!foundDe) {
+      return null;
+    }
+
+    return (
+      <div>
+        <InputField
+          value={
+            currentEvent && currentEvent?.dataValues[de]
+              ? currentEvent?.dataValues[de]
+              : ""
+          }
+          change={(value) => {
+            if (extraFunction) {
+              extraFunction(value);
+            }
+            mutateDataValue(currentEvent?.event, de, value);
+          }}
+          valueType="RADIO"
+          valueSet={foundDe.valueSet}
+          disabled={enrollmentStatus === "COMPLETED"}
+          placeholder={placeholder}
+        />
+      </div>
+    );
+  };
+
   const tagRender = (props) => {
     const { label, value, closable, onClose } = props;
     const option = icd11Options.find(
@@ -1254,38 +1290,7 @@ const Stage = ({
     return liveBirths + stillBirths + abortions;
   };
 
-  const renderBirthTypeRadioGroup = () => {
-    const options = [
-      { label: "Single birth", value: "BT_SINGLE" },
-      { label: "First twin", value: "BT_1ST_TWIN" },
-      { label: "Second twin", value: "BT_2ND_TWIN" },
-      { label: "Other multiple", value: "BT_MULTIPLE" },
-    ];
 
-    return (
-      <Radio.Group
-        value={
-          currentEvent?.dataValues[
-            formMapping.dataElements["child_birth_type"]
-          ] || ""
-        }
-        onChange={(e) => {
-          mutateDataValue(
-            currentEvent?.event,
-            formMapping.dataElements["child_birth_type"],
-            e.target.value
-          );
-        }}
-        disabled={enrollmentStatus === "COMPLETED"}
-      >
-        {options.map((option) => (
-          <Radio key={option.value} value={option.value}>
-            {option.label}
-          </Radio>
-        ))}
-      </Radio.Group>
-    );
-  };
 
   return (
     <>
@@ -2410,25 +2415,9 @@ const Stage = ({
                         Type of Stillbirth
                       </div>
                       <div className="field-input">
-                        <Radio.Group
-                          value={
-                            currentEvent?.dataValues[
-                              formMapping.dataElements["type_of_stillbirth"]
-                            ] || ""
-                          }
-                          onChange={(e) => {
-                            mutateDataValue(
-                              currentEvent?.event,
-                              formMapping.dataElements["type_of_stillbirth"],
-                              e.target.value
-                            );
-                          }}
-                          disabled={enrollmentStatus === "COMPLETED"}
-                        >
-                          <Radio value="STILLBIRTH_FRESH">Fresh Stillbirth</Radio>
-                          <Radio value="STILLBIRTH_MACERATED">Maceration</Radio>
-                          <Radio value="STILLBIRTH_OTHER">Other</Radio>
-                        </Radio.Group>
+                        {renderRadioButtons(
+                          formMapping.dataElements["type_of_stillbirth"]
+                        )}
                       </div>
                     </div>
                   )}
@@ -2449,7 +2438,11 @@ const Stage = ({
                       This birth was
                     </div>
                     <div className="field-input">
-                      {renderBirthTypeRadioGroup()}
+                      {renderRadioButtons(
+                        formMapping.dataElements["child_birth_type"],
+                        undefined,
+                        "Child Birth Type"
+                      )}
                     </div>
                   </div>
 

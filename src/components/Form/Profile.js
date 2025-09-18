@@ -234,36 +234,47 @@ const Profile = ({
             mutateAttribute(formMapping.attributes["dob"], dobData.formatted);
             calculateAge(dobData.formatted);
             
-            // Auto-check over100 if 20XX date would be in the future
+            // Auto-check over100 ONLY if 20XX date would be in the future AND checkbox should be visible
             if (!over100 && dobData.date20XX) {
               const date20XXObj = new Date(dobData.date20XX);
               const is20XXFuture = date20XXObj > new Date();
               
-              if (is20XXFuture) {
-                // Automatically check the over100 checkbox
+              // Only auto-check if this ID is within the last 15 years (checkbox will be visible)
+              const year = parseInt(saIdNumber.substring(0, 2));
+              const currentYear = new Date().getFullYear();
+              const birthYear20XX = 2000 + year;
+              const minYear = currentYear - 15;
+              const maxYear = currentYear;
+              const shouldShowOver100 = birthYear20XX >= minYear && birthYear20XX <= maxYear;
+              
+              if (is20XXFuture && shouldShowOver100) {
+                // Automatically check the over100 checkbox ONLY for future dates within last 15 years
                 mutateAttribute(formMapping.attributes["over100"], "true");
                 setSaIdHelper("✓ Valid SA ID number - Automatically detected as 19th century (future date)");
+              }
+            }
+            
+            // Auto-uncheck over100 if current ID doesn't need it (not within last 15 years)
+            if (over100) {
+              const year = parseInt(saIdNumber.substring(0, 2));
+              const currentYear = new Date().getFullYear();
+              const birthYear20XX = 2000 + year;
+              const minYear = currentYear - 15;
+              const maxYear = currentYear;
+              
+              if (birthYear20XX < minYear || birthYear20XX > maxYear) {
+                // This ID is not within last 15 years, so uncheck over100
+                mutateAttribute(formMapping.attributes["over100"], "false");
+                setSaIdHelper("✓ Valid SA ID number - Using 21st century (2000s) - Over 100 unchecked (not needed)");
               }
             }
             
             // Show appropriate helper message based on over100 status
             if (over100) {
               setSaIdHelper("✓ Valid SA ID number - Using 19th century (1900s)");
-            } else if (dobData.hasCenturyAmbiguity) {
-              // Check if the calculated age suggests they might be over 100
-              const calculatedAge = moment(currentEnrollment.incidentDate || moment(), "YYYY-MM-DD").diff(
-                moment(dobData.formatted, "YYYY-MM-DD"),
-                "years",
-                true
-              );
-              
-              if (calculatedAge >= 100) {
-                setSaIdHelper("⚠️ Age calculated as " + Math.floor(calculatedAge) + " years - Consider checking 'Over 100' if born in 1900s");
-              } else {
-                setSaIdHelper("✓ Valid SA ID number - Using 21st century (2000s) - Check 'Over 100' if born in 1900s");
-              }
             } else {
-              setSaIdHelper("✓ Valid SA ID number");
+              // Default behavior: always assume 21st century unless over100 is checked
+              setSaIdHelper("✓ Valid SA ID number - Using 21st century (2000s)");
             }
           }
 
@@ -883,35 +894,60 @@ const Profile = ({
         .slice(0, 3)
         .map((attribute) => populateInputField(attribute))} */}
 
-      {/* Over 100 checkbox with custom handling - only show for SA ID */}
+   
+      {renderDOBGroup()}
+      
+               {/* Over 100 checkbox with custom handling - only show for SA ID when birth year is within last 15 years */}
       {currentTei.attributes[formMapping.attributes["identification_type"]] === "ID_TYPE_SA" && (() => {
         const over100Tea = getTeaMetadata(formMapping.attributes["over100"]);
         if (over100Tea) {
-          return (
-            <InputField
-              value={getTeaValue(formMapping.attributes["over100"])}
-              valueType={over100Tea.valueType}
-              valueSet={over100Tea.valueSet}
-              label={`${over100Tea.displayFormName} (Check if person was born in 1900s)`}
-              change={(newValue) => {
-                mutateAttribute(over100Tea.id, newValue);
-                
-                // Show helpful message when manually checked
-                if (newValue === true || newValue === "true") {
-                  setSaIdHelper("✓ Over 100 checkbox checked - Age will be recalculated using 19th century");
-                } else {
-                  // Clear helper message when unchecked
-                  setSaIdHelper(null);
-                }
-              }}
-              disabled={enrollmentStatus === "COMPLETED"}
-              mandatory={over100Tea.compulsory}
-            />
-          );
+          // Check if the SA ID birth year is within the last 15 years
+          const saIdNumber = currentTei.attributes[formMapping.attributes["sa_id_number"]];
+          let shouldShowOver100 = false;
+          
+          if (saIdNumber && saIdNumber.length === 13) {
+            const year = parseInt(saIdNumber.substring(0, 2));
+            const currentYear = new Date().getFullYear();
+            
+            // Calculate the actual birth years for both centuries
+            const birthYear20XX = 2000 + year;
+            const birthYear19XX = 1900 + year;
+            
+            // Only show checkbox for people born within the last 15 years
+            // This means: 20XX date should be within the last 15 years
+            const minYear = currentYear - 15;
+            const maxYear = currentYear;
+            
+            // Show checkbox only if 20XX birth year is within the last 15 years
+            shouldShowOver100 = birthYear20XX >= minYear && birthYear20XX <= maxYear;
+          }
+          
+          if (shouldShowOver100) {
+            return (
+              <InputField
+                value={getTeaValue(formMapping.attributes["over100"])}
+                valueType={over100Tea.valueType}
+                valueSet={over100Tea.valueSet}
+                label={`${over100Tea.displayFormName} (Check if person was born in 1900s)`}
+                change={(newValue) => {
+                  mutateAttribute(over100Tea.id, newValue);
+                  
+                  // Show helpful message when manually checked
+                  if (newValue === true || newValue === "true") {
+                    setSaIdHelper("✓ Over 100 checkbox checked - Age will be recalculated using 19th century");
+                  } else {
+                    // Clear helper message when unchecked
+                    setSaIdHelper(null);
+                  }
+                }}
+                disabled={enrollmentStatus === "COMPLETED"}
+                mandatory={over100Tea.compulsory}
+              />
+            );
+          }
         }
         return null;
       })()}
-      {renderDOBGroup()}
       {populateInputField(formMapping.attributes["sex"])}
       {fullnameOption !== "noname" &&
         fullnameOption !== "fullname" &&

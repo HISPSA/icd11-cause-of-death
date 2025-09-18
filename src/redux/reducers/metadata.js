@@ -26,7 +26,7 @@ import {
 
 const initialState = {
   programMetadata: null,
-    selectedOrgUnit:  {
+  selectedOrgUnit:  {
     id: "j8Hax56gOBJ",
     displayName: "gp Steve Biko Academic Hospital",
   },

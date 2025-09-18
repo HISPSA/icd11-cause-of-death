@@ -180,6 +180,26 @@ const InputField = (props) => {
             </Radio>
           </Radio.Group>
         );
+      case "RADIO":
+        return (
+          <Radio.Group
+            value={value}
+            onChange={(event) => {
+              change(event.target.value);
+            }}
+            disabled={disabled}
+          >
+            {valueSet && valueSet.map((option) => (
+              <Radio 
+                key={option.value} 
+                value={option.value} 
+                style={{ fontSize: "13.5px" }}
+              >
+                {option.label}
+              </Radio>
+            ))}
+          </Radio.Group>
+        );
       case "TRUE_ONLY":
         return (
           <Checkbox
