@@ -50,6 +50,15 @@ const Stage = ({
     [formMapping.dataElements["codO"]]: formMapping.dataElements["cod_other_text"],
   });
 
+  // Helper function to get free text field mapping
+  const getFreeTextFieldMapping = () => ({
+    [formMapping.dataElements["codA"]]: formMapping.dataElements["codA_other_name"],
+    [formMapping.dataElements["codB"]]: formMapping.dataElements["codB_other_name"],
+    [formMapping.dataElements["codC"]]: formMapping.dataElements["codC_other_name"],
+    [formMapping.dataElements["codD"]]: formMapping.dataElements["codD_other_name"],
+    [formMapping.dataElements["codO"]]: formMapping.dataElements["codO_other_name"],
+  });
+
   // Helper function to extract text from code value using icd11Options
   const extractTextFromCode = (codeValue) => {
     if (!codeValue || codeValue === "") return "";
@@ -60,6 +69,16 @@ const Stage = ({
       const option = icd11Options.find(opt => opt.code === codePart);
       return option ? option.name : codePart;
     }).join(", ");
+  };
+
+  // Helper function to get free text content for a COD field
+  const getFreeTextContent = (codFieldId) => {
+    const freeTextFieldMapping = getFreeTextFieldMapping();
+    const freeTextFieldId = freeTextFieldMapping[codFieldId];
+    if (freeTextFieldId && currentEvent?.dataValues[freeTextFieldId]) {
+      return currentEvent.dataValues[freeTextFieldId];
+    }
+    return "";
   };
 
   const {
@@ -1539,9 +1558,10 @@ const Stage = ({
             })}
         </table>
       </Modal>
-      <Icd11Tool
+        <Icd11Tool
         visible={icdTool}
         setVisible={setIcdTool}
+        initialSearchTerm={getFreeTextContent(activeCauseOfDeath.code)}
         onSelect={(cod) => {
           const selectedCod = {
             code: cod.code,

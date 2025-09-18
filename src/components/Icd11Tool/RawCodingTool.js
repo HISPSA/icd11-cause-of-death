@@ -12,7 +12,7 @@ const { Search } = Input;
 
 let apiUrl = process.env.REACT_APP_ICD11_API_URL;
 
-const RawCodingTool = ({ onSelect, iNo, isClear, defaultValue, freeText, keyUILocale, icdApi_clientToken }) => {
+const RawCodingTool = ({ onSelect, iNo, isClear, defaultValue, freeText, initialSearchTerm, keyUILocale, icdApi_clientToken }) => {
   const { t } = useTranslation();
   const [searchValue, setSearchValue] = useState("");
   const [selectedEntity, setSelectedEntity] = useState(null);
@@ -25,23 +25,22 @@ const RawCodingTool = ({ onSelect, iNo, isClear, defaultValue, freeText, keyUILo
 
   useEffect(() => {
     if (defaultValue.code === "") {
-      // if (freeText === "") {
+      if (initialSearchTerm && initialSearchTerm.trim() !== "") {
+        setSearchValue(initialSearchTerm);
+        search(initialSearchTerm);
+        setSelectedEntity(null);
+      } else {
         setSearchValue("");
         setSelectedEntity(null);
         ECT.Handler.clear(iNo);
-      // }
-      // else {
-      //   setSearchValue(freeText);
-      //   search(freeText);
-      //   setSelectedEntity(defaultValue || null);
-      // }
+      }
     }
     else {
       setSearchValue(defaultValue ? defaultValue.title : "");
       search(defaultValue ? defaultValue.title : "");
       setSelectedEntity(defaultValue || null);
     }
-  }, [defaultValue]);
+  }, [defaultValue, initialSearchTerm]);
 
   useEffect(() => {
     debounceSearch(searchValue);
