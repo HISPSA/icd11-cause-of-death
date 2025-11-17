@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { connect } from "react-redux";
-import { Button, Modal, Tooltip, Radio } from "antd";
+import { Button, Modal, Tooltip, Radio, message } from "antd";
 
 /* Styling tools */
 import { useTranslation } from "react-i18next";
@@ -20,12 +20,135 @@ import {
 /* Utils */
 import { generateCode } from "../../utils";
 
+// Export the runDorisAndProceed function for use in Form component
+export const createRunDorisAndProceed = (currentEvent, causeOfDeaths, formMapping, icd11Options, attributes, currentTeiAgeAttributeValue, mutateDataValue, setUnderlyingResult, detectUnderlyingCauseOfDeath) => {
+  // Check if age is 0-6 days (neonatal deaths)
+  const checkIfNeonatalAge = () => {
+    if (!currentTeiAgeAttributeValue) return false;
+    
+    const ageUnit = attributes[formMapping.attributes["age_unit"]];
+    const ageValue = attributes[formMapping.attributes["estimated_age"]];
+    
+    if (!ageUnit || !ageValue) return false;
+    
+    if (ageUnit.toLowerCase().includes("day")) {
+      const ageInDays = parseInt(ageValue);
+      return ageInDays >= 0 && ageInDays <= 6;
+    }
+    
+    return false;
+  };
+
+  // Check if DORIS was successful
+  const isDorisSuccessful = () => {
+    const underlyingCode = currentEvent?.dataValues[formMapping.dataElements["underlyingCOD_code"]];
+    return underlyingCode && underlyingCode !== "";
+  };
+
+  // Auto-populate manual from codA
+  const populateManualFromCodA = () => {
+    const immediateCause = causeOfDeaths[formMapping.dataElements["codA"]].code;
+    
+    if (!immediateCause || immediateCause === "") {
+      message.error("No immediate cause of death (codA) found. Please enter cause of death A.");
+      return false;
+    }
+
+    const immediateCode = immediateCause.split(",")
+      .map(c => c.split(" (")[0])
+      .join(",");
+
+    // Set processing method to Manual
+    mutateDataValue(currentEvent?.event, formMapping.dataElements["underlyingCOD_processed_by"], "Manual");
+    
+    // Set reason for manual selection
+    mutateDataValue(currentEvent?.event, formMapping.dataElements["reason_of_manual_COD_selection"], "DORIS failed - using immediate cause of death (codA)");
+    
+    // Use immediate cause as underlying cause
+    mutateDataValue(currentEvent?.event, formMapping.dataElements["underlyingCOD"], immediateCode);
+    mutateDataValue(currentEvent?.event, formMapping.dataElements["underlyingCOD_code"], immediateCode);
+    
+    // Get chapter and group from icd11Options
+    const option = icd11Options.find(opt => opt.code === immediateCode);
+    if (option) {
+      const chapterValue = option.attributeValues.find(
+        attrVal => attrVal.attribute.id === formMapping.optionAttributes["chapter"]
+      )?.value || "";
+      
+      const groupValue = option.attributeValues.find(
+        attrVal => attrVal.attribute.id === formMapping.optionAttributes["group"]
+      )?.value || "";
+      
+      mutateDataValue(currentEvent?.event, formMapping.dataElements["underlyingCOD_chapter"], chapterValue);
+      mutateDataValue(currentEvent?.event, formMapping.dataElements["underlyingCOD_group"], groupValue);
+    }
+    
+    // Set codA as underlying, clear others
+    mutateDataValue(currentEvent?.event, formMapping.dataElements["codA_underlying"], true);
+    mutateDataValue(currentEvent?.event, formMapping.dataElements["codB_underlying"], false);
+    mutateDataValue(currentEvent?.event, formMapping.dataElements["codC_underlying"], false);
+    mutateDataValue(currentEvent?.event, formMapping.dataElements["codD_underlying"], false);
+    mutateDataValue(currentEvent?.event, formMapping.dataElements["codO_underlying"], false);
+    
+    // Update local state
+    setUnderlyingResult(immediateCode);
+    
+    return true;
+  };
+
+  // Main DORIS integration function
+  return async (proceedFunction) => {
+    // Check if age is 0-6 days
+    if (checkIfNeonatalAge()) {
+      message.warning("Manual cause of death recommended for ages 0-6 days. DORIS tool will not work for neonatal deaths. Please select manual processing.");
+      return;
+    }
+
+    // Check if DORIS already succeeded
+    if (isDorisSuccessful()) {
+      proceedFunction();
+      return;
+    }
+
+    // Check if manual already selected
+    const processedBy = currentEvent?.dataValues[formMapping.dataElements["underlyingCOD_processed_by"]];
+    if (processedBy === "Manual") {
+      // Auto-populate from codA and proceed
+      if (populateManualFromCodA()) {
+        message.info("Manual processing detected. Populated underlying cause from immediate cause of death (codA).");
+        proceedFunction();
+      }
+      return;
+    }
+
+    // Run DORIS tool
+    try {
+      await detectUnderlyingCauseOfDeath();
+      
+      // Check if DORIS succeeded
+      setTimeout(() => {
+        if (isDorisSuccessful()) {
+          message.success("DORIS tool completed successfully.");
+          proceedFunction();
+        } else {
+          message.error("DORIS tool failed. Manual capture is required. Please select manual processing and provide a reason.");
+        }
+      }, 1000); // Small delay to allow state updates
+      
+    } catch (error) {
+      console.error("DORIS Error:", error);
+      message.error("DORIS tool failed. Manual capture is required. Please select manual processing and provide a reason.");
+    }
+  };
+};
+
 const Stage = ({
   metadata,
   data,
   mutateEvent,
   mutateDataValue,
   initNewEvent,
+  runDorisAndProceed,
 }) => {
   const { t } = useTranslation();
 
@@ -934,6 +1057,7 @@ const Stage = ({
       <></>
     );
   };
+
 
   const detectUnderlyingCauseOfDeath = async () => {
     let headers = new Headers();

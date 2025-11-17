@@ -28,6 +28,7 @@ import {
   mutateAttribute,
   mutateEnrollment,
   mutateEvent,
+  mutateDataValue,
 } from "../../redux/actions/data";
 
 import { Hooks } from "tracker-capture-app-core";
@@ -72,12 +73,69 @@ const validateSAIdBeforeSave = (currentTei, formMapping) => {
   return true;
 };
 
+// Check if DORIS processing is required before Save/Complete
+const checkDorisRequirement = (data, metadata) => {
+  const { currentTei, currentEvents } = data;
+  const { formMapping } = metadata;
+  
+  // Get current event
+  const currentEvent = currentEvents.find((event) => {
+    return event.programStage === formMapping.programStage;
+  });
+  
+  // Check if age is 0-6 days (neonatal deaths)
+  const currentTeiAgeAttributeValue = currentTei?.attributes[formMapping.attributes["age"]];
+  const ageUnit = currentTei?.attributes[formMapping.attributes["age_unit"]];
+  const ageValue = currentTei?.attributes[formMapping.attributes["estimated_age"]];
+  
+  if (currentTeiAgeAttributeValue && ageUnit && ageValue) {
+    if (ageUnit.toLowerCase().includes("day")) {
+      const ageInDays = parseInt(ageValue);
+      if (ageInDays >= 0 && ageInDays <= 6) {
+        return {
+          required: true,
+          reason: "neonatal",
+          message: "Manual cause of death recommended for ages 0-6 days. DORIS tool will not work for neonatal deaths. Please select manual processing and provide a reason."
+        };
+      }
+    }
+  }
+  
+  // Check if DORIS was already successful
+  const underlyingCode = currentEvent?.dataValues[formMapping.dataElements["underlyingCOD_code"]];
+  if (underlyingCode && underlyingCode !== "") {
+    return {
+      required: false,
+      reason: "doris_success",
+      message: "DORIS processing already completed."
+    };
+  }
+  
+  // Check if manual processing is already selected
+  const processedBy = currentEvent?.dataValues[formMapping.dataElements["underlyingCOD_processed_by"]];
+  if (processedBy === "Manual") {
+    return {
+      required: false,
+      reason: "manual_selected",
+      message: "Manual processing already selected."
+    };
+  }
+  
+  // DORIS processing is required
+  return {
+    required: true,
+    reason: "doris_required",
+    message: "Please use the DORIS tool to determine the underlying cause of death before saving/completing."
+  };
+};
+
 const Form = ({ 
   changeRoute,
   mutateTei,
   mutateAttribute,
   mutateEnrollment,
   mutateEvent,
+  mutateDataValue,
   data,
   metadata,
   userRoles,
@@ -558,46 +616,40 @@ const Form = ({
                         return;
                       }
                       
-                      if (
-                        currentEvents[0] &&
-                        currentEvents[0].dataValues &&
-                        currentEvents[0].dataValues[formMapping.dataElements["underlyingCOD_processed_by"]] &&
-                        currentEvents[0].dataValues[formMapping.dataElements["underlyingCOD_processed_by"]] === "Manual" &&
-                        (( 
-                          currentEvents[0].dataValues[formMapping.dataElements["reason_of_manual_COD_selection"]] && 
-                          currentEvents[0].dataValues[formMapping.dataElements["reason_of_manual_COD_selection"]] === "" 
-                        ) || !currentEvents[0].dataValues[formMapping.dataElements["reason_of_manual_COD_selection"]])
-                      ) {
-                        message.error("ERROR!!! Please select reason of not using the result from DORIS tool");
+                      // Check DORIS requirement
+                      const dorisCheck = checkDorisRequirement(data, metadata);
+                      if (dorisCheck.required) {
+                        message.warning(dorisCheck.message);
+                        return;
                       }
-                      else {
-                        setLoading(true);
+                      
+                      // Proceed with completion
+                      setLoading(true);
 
-                        mutateEnrollment("status", "COMPLETED");
-                        mutateAttribute(formMapping.attributes["status"], "Completed");
+                      mutateEnrollment("status", "COMPLETED");
+                      mutateAttribute(formMapping.attributes["status"], "Completed");
 
-                        const { currentTei, currentEnrollment, currentEvents } = generateDhis2Payload(
-                          data,
-                          programMetadata
-                        );
-                        await dataApi.pushEnrollment(
-                          currentEnrollment,
-                          programMetadata.id
-                        );
-                        await dataApi.pushTrackedEntityInstance(
-                          currentTei,
-                          programMetadata.id
-                        );
-                        await dataApi.pushEvents({ events: currentEvents });
-                        mutateTei("isSaved", true);
+                      const { currentTei: payloadTei, currentEnrollment: payloadEnrollment, currentEvents: payloadEvents } = generateDhis2Payload(
+                        data,
+                        programMetadata
+                      );
+                      await dataApi.pushEnrollment(
+                        payloadEnrollment,
+                        programMetadata.id
+                      );
+                      await dataApi.pushTrackedEntityInstance(
+                        payloadTei,
+                        programMetadata.id
+                      );
+                      await dataApi.pushEvents({ events: payloadEvents });
+                      mutateTei("isSaved", true);
 
-                        // Dirty Check
-                        mutateTei("isDirty", false);
-                        mutateEnrollment("isDirty", false);
-                        mutateEvent(currentEvents[0].event,"isDirty",false);
-                        
-                        setLoading(false);
-                      }
+                      // Dirty Check
+                      mutateTei("isDirty", false);
+                      mutateEnrollment("isDirty", false);
+                      mutateEvent(payloadEvents[0].event,"isDirty",false);
+                      
+                      setLoading(false);
                     }}
                   >
                     Complete
@@ -616,48 +668,42 @@ const Form = ({
                       return;
                     }
                     
-                    if (
-                      currentEvents[0] &&
-                        currentEvents[0].dataValues &&
-                        currentEvents[0].dataValues[formMapping.dataElements["underlyingCOD_processed_by"]] &&
-                        currentEvents[0].dataValues[formMapping.dataElements["underlyingCOD_processed_by"]] === "Manual" &&
-                        (( 
-                          currentEvents[0].dataValues[formMapping.dataElements["reason_of_manual_COD_selection"]] && 
-                          currentEvents[0].dataValues[formMapping.dataElements["reason_of_manual_COD_selection"]] === "" 
-                        ) || !currentEvents[0].dataValues[formMapping.dataElements["reason_of_manual_COD_selection"]])
-                    ) {
-                      message.error("ERROR!!! Please select reason of not using the result from DORIS tool");
+                    // Check DORIS requirement
+                    const dorisCheck = checkDorisRequirement(data, metadata);
+                    if (dorisCheck.required) {
+                      message.warning(dorisCheck.message);
+                      return;
                     }
-                    else {
-                      setLoading(true);
-                      const { currentTei, currentEnrollment, currentEvents } = generateDhis2Payload(
-                        data,
-                        programMetadata
-                      );
-                      await dataApi.pushTrackedEntityInstance(
-                        currentTei,
-                        programMetadata.id
-                      );
-                      await dataApi.pushEnrollment(
-                        currentEnrollment,
-                        programMetadata.id
-                      );
-                      await dataApi.pushTrackedEntityInstance(
-                        currentTei,
-                        programMetadata.id
-                      );
-                      await dataApi.pushEvents({ events: currentEvents });
-                      mutateTei("isSaved", true);
-            
-                      // Dirty Check
-                      mutateTei("isDirty", false);
-                      mutateEnrollment("isDirty", false);
-                      mutateEvent(currentEvents[0].event,"isDirty",false);
-            
-                      // Notification
-                      setLoading(false);
-                      message.success("Saved Successfully!");
-                    }
+                    
+                    // Proceed with saving
+                    setLoading(true);
+                    const { currentTei: payloadTei, currentEnrollment: payloadEnrollment, currentEvents: payloadEvents } = generateDhis2Payload(
+                      data,
+                      programMetadata
+                    );
+                    await dataApi.pushTrackedEntityInstance(
+                      payloadTei,
+                      programMetadata.id
+                    );
+                    await dataApi.pushEnrollment(
+                      payloadEnrollment,
+                      programMetadata.id
+                    );
+                    await dataApi.pushTrackedEntityInstance(
+                      payloadTei,
+                      programMetadata.id
+                    );
+                    await dataApi.pushEvents({ events: payloadEvents });
+                    mutateTei("isSaved", true);
+          
+                    // Dirty Check
+                    mutateTei("isDirty", false);
+                    mutateEnrollment("isDirty", false);
+                    mutateEvent(payloadEvents[0].event,"isDirty",false);
+          
+                    // Notification
+                    setLoading(false);
+                    message.success("Saved Successfully!");
                   }}
                 >
                   Save
@@ -706,6 +752,7 @@ const mapDispatchToProps = {
   mutateAttribute,
   mutateEnrollment,
   mutateEvent,
+  mutateDataValue,
 };
 
 export default connect(mapStateToProps, mapDispatchToProps)(Form);
