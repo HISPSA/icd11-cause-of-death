@@ -159,9 +159,9 @@ const resources = {
       posisoning: "If external cause or posisoning, date of injury",
       describe:
         "Please describe how external cause occurred (if poisoning, please specify poisoning agent)",
-      occurrencePlace: "Place of occurrence of the external cause",
+      occurrencePlace: "External cause of death",
       occurrenceSpecifyPlace:
-        "Specify place of occurence of the external cause",
+        "Please specify external cause of death",
       pregnant: "Multiple pregnancy?",
       stillborn: "Stillborn?",
       hoursSurvived: "If death within 24hrs specify number of hours survived",

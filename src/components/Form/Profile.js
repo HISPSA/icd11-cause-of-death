@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import InputField from "../InputField";
-import { Col, Row, message } from "antd";
+import { Col, Row, message, Popover, Input, Button } from "antd";
 import moment from "moment";
 /* REDUX */
 import { connect } from "react-redux";
@@ -14,7 +14,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 /*       */
-import { Hooks } from "tracker-capture-app-core";
+import { Hooks, Components } from "tracker-capture-app-core";
 import {
   validateSAIdNumber,
   extractDateOfBirth,
@@ -23,6 +23,7 @@ import {
 } from "../../utils/saIdValidation";
 
 const { useApi } = Hooks;
+const { OrgUnitSelector } = Components;
 const Profile = ({
   mutateAttribute,
   mutateEnrollment,
@@ -47,8 +48,15 @@ const Profile = ({
     currentEvents,
     currentEnrollment: { status: enrollmentStatus },
   } = data;
-  const { programMetadata, formMapping, fullnameOption, selectedOrgUnit } =
+  const { programMetadata, formMapping, fullnameOption, selectedOrgUnit, orgUnits } =
     metadata;
+
+  // State for org unit selector search
+  const [searchOU, setSearchOU] = useState("");
+  const [filterOU, setFilterOU] = useState([]);
+
+  // Ref to track if we've attempted to generate system_id (prevents infinite retries on 409)
+  const hasAttemptedSystemIdGeneration = useRef(false);
 
   // Real-time SA ID validation function
   const validateSAIdRealTime = async (idNumber) => {
@@ -177,17 +185,54 @@ const Profile = ({
     }
   };
 
+  // Get the system_id attribute ID and value
+  const systemIdAttribute = formMapping?.attributes?.["system_id"];
+  const systemIdValue = systemIdAttribute ? (currentTei?.attributes?.[systemIdAttribute] || "") : "";
+
   useEffect(() => {
-    if (getTeaValue(formMapping.attributes["system_id"]) === "") {
+    if (!systemIdAttribute) return;
+    
+    // Only attempt to generate if:
+    // 1. The value is empty
+    // 2. We haven't already attempted to generate it (prevents infinite retries on 409)
+    if (systemIdValue === "" && !hasAttemptedSystemIdGeneration.current) {
+      hasAttemptedSystemIdGeneration.current = true;
+      
       metadataApi
         .get(
-          `/api/trackedEntityAttributes/${formMapping.attributes["system_id"]}/generate.json`
+          `/api/trackedEntityAttributes/${systemIdAttribute}/generate.json`
         )
         .then((res) => {
-          mutateAttribute(formMapping.attributes["system_id"], res.value);
+          if (res && res.value) {
+            mutateAttribute(systemIdAttribute, res.value);
+          }
+        })
+        .catch((error) => {
+          // Handle 409 Conflict and other errors
+          console.error("Failed to generate system_id:", error);
+          // Reset the flag so we can retry if the value is manually cleared
+          // But only after a delay to prevent immediate retry
+          if (error?.response?.status !== 409) {
+            // For non-409 errors, allow retry
+            hasAttemptedSystemIdGeneration.current = false;
+          }
+          // For 409 errors, keep the flag set to prevent infinite retries
         });
     }
-  }, [data]);
+    
+    // Reset the flag if the value is manually set (not empty)
+    if (systemIdValue !== "") {
+      hasAttemptedSystemIdGeneration.current = false;
+    }
+  }, [systemIdValue, systemIdAttribute, mutateAttribute, metadataApi]);
+
+  // Prefill reportedDate with today's date for new registrations
+  useEffect(() => {
+    if (currentTei.isNew && !currentEnrollment.enrollmentDate) {
+      const today = moment().format("YYYY-MM-DD");
+      mutateEnrollment("enrollmentDate", today);
+    }
+  }, [currentTei.isNew, currentEnrollment.enrollmentDate, mutateEnrollment]);
 
   useEffect(() => {
     if (
@@ -337,6 +382,25 @@ const Profile = ({
       );
     }
   }, [selectedOrgUnit]);
+
+  // useEffect for org unit search filter
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (orgUnits && searchOU) {
+        setFilterOU(
+          orgUnits
+            .filter(({ displayName }) =>
+              displayName.toLowerCase().includes(searchOU.toLowerCase())
+            )
+            .map(({ path }) => path)
+        );
+      }
+      if (!searchOU) {
+        setFilterOU([]);
+      }
+    }, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [searchOU, orgUnits]);
 
   const getTeaMetadata = (attribute) =>
     programMetadata.trackedEntityAttributes.find((tea) => tea.id === attribute);
@@ -650,8 +714,9 @@ const Profile = ({
       {populateInputField(formMapping.attributes["system_id"])}
       {populateInputField(formMapping.attributes["type_of_death_reg_no"], true)}
       
-      {/* Conditional barcode field - only show if DHA is selected */}
-      {currentTei.attributes[formMapping.attributes["type_of_death_reg_no"]] === "DHA" && (
+      {/* Conditional barcode field - show if DHA or TRANSFER is selected */}
+      {(currentTei.attributes[formMapping.attributes["type_of_death_reg_no"]] === "DHA" ||
+        currentTei.attributes[formMapping.attributes["type_of_death_reg_no"]] === "TRANSFER") && (
         <InputField
           value={getTeaValue(formMapping.attributes["barcode_number"])}
           valueType={getTeaMetadata(formMapping.attributes["barcode_number"]).valueType}
@@ -661,8 +726,10 @@ const Profile = ({
           helper={barcodeHelper}
           helperSuccess={barcodeHelper === "✓ Valid Barcode"}
           change={async (newValue) => {
-            // If DHA is selected, prefix with 1663
-            if (currentTei.attributes[formMapping.attributes["type_of_death_reg_no"]] === "DHA") {
+            const deathRegType = currentTei.attributes[formMapping.attributes["type_of_death_reg_no"]];
+            
+            // If DHA is selected, prefix with 1663 and check duplicates
+            if (deathRegType === "DHA") {
               // Get current value to compare
               const currentValue = getTeaValue(formMapping.attributes["barcode_number"]);
               
@@ -725,8 +792,12 @@ const Profile = ({
                 setBarcodeError(null);
                 setBarcodeHelper(null);
               }
-            } else {
+            } else if (deathRegType === "TRANSFER") {
+              // For TRANSFER, just update the value without any prefix or duplicate checking
               mutateAttribute(formMapping.attributes["barcode_number"], newValue);
+              // Clear any existing validation messages
+              setBarcodeError(null);
+              setBarcodeHelper(null);
             }
           }}
           disabled={
@@ -734,9 +805,66 @@ const Profile = ({
             getTeaMetadata(formMapping.attributes["barcode_number"]).id ===
               formMapping.attributes["name_of_health_facility_practice"]
           }
-          mandatory={true}
+          mandatory={currentTei.attributes[formMapping.attributes["type_of_death_reg_no"]] === "DHA"}
         />
       )}
+
+      {/* Referring institution field - only show if TRANSFER is selected */}
+      {currentTei.attributes[formMapping.attributes["type_of_death_reg_no"]] === "TRANSFER" && (
+      populateInputField(formMapping.attributes["refering_institution"])
+      )}
+      {/* {currentTei.attributes[formMapping.attributes["type_of_death_reg_no"]] === "TRANSFER" && (() => {
+        const referringInstitutionId = getTeaValue(formMapping.attributes["refering_institution"]);
+        const referringInstitution = orgUnits?.find(ou => ou.id === referringInstitutionId);
+        const referringInstitutionTea = getTeaMetadata(formMapping.attributes["refering_institution"]);
+        
+        return (
+          <div className="input-container">
+            {referringInstitutionTea && (
+              <div className="input-label">
+                {referringInstitutionTea.displayFormName}
+                {referringInstitutionTea.compulsory && <span className="mandatory-asterisk"> *</span>}
+              </div>
+            )}
+            <div className="input-field">
+              <Popover
+                trigger="click"
+                content={
+                  <>
+                    <Input
+                      placeholder="Search"
+                      value={searchOU}
+                      onChange={(e) => {
+                        setSearchOU(e.target.value);
+                      }}
+                    />
+                    <div className="orgunit-selector-container">
+                      {orgUnits && orgUnits.length > 0 && (
+                        <OrgUnitSelector
+                          selectedOrgUnit={referringInstitution || null}
+                          handleSelectOrgUnit={(orgUnit) => {
+                            mutateAttribute(formMapping.attributes["refering_institution"], orgUnit.id);
+                            setSearchOU("");
+                          }}
+                          filter={searchOU === "" ? [] : filterOU}
+                        />
+                      )}
+                    </div>
+                  </>
+                }
+              >
+                <Button style={{ width: "100%", textAlign: "left" }} disabled={enrollmentStatus === "COMPLETED"}>
+                  {referringInstitution ? (
+                    referringInstitution.displayName
+                  ) : (
+                    "Select referring institution"
+                  )}
+                </Button>
+              </Popover>
+            </div>
+          </div>
+        );
+      })()} */}
 
       <InputField
         value={currentEnrollment.incidentDate || ""}
@@ -969,6 +1097,9 @@ const Profile = ({
       {populateInputField(formMapping.attributes["type_of_fileno"])}
 
       {/* Conditional rendering of file number fields based on type_of_fileno */}
+      {currentTei.attributes[formMapping.attributes["type_of_fileno"]] ===
+        "TYPE_BODY" &&
+        populateInputField(formMapping.attributes["body_no"], true)}
       {(currentTei.attributes[formMapping.attributes["type_of_fileno"]] ===
         "TYPE_HPRN" ||
         currentTei.attributes[formMapping.attributes["type_of_fileno"]] ===
@@ -981,6 +1112,17 @@ const Profile = ({
         populateInputField(formMapping.attributes["patient_file_no"], true)}
 
       {populateInputField(formMapping.attributes["place_of_death"])}
+
+      {/* Only show incident_scene when place_of_death is PLACE_DEATH_FPS */}
+      {currentTei.attributes[formMapping.attributes["place_of_death"]] === "PLACE_DEATH_FPS" && (
+        <>
+          {populateInputField(formMapping.attributes["incident_scene"])}
+          
+          {/* Only show scene_other_specify when incident_scene is OTHER_SCENE */}
+          {currentTei.attributes[formMapping.attributes["incident_scene"]] === "OTHER_SCENE" &&
+            populateInputField(formMapping.attributes["scene_other_specify"])}
+        </>
+      )}
 
       {currentTei.attributes[formMapping.attributes["place_of_death"]] ===
         "PLACE_DEATH_OTHER_PLACE" &&

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { connect } from "react-redux";
-import { Button, Modal, Tooltip, Radio } from "antd";
+import { Button, Modal, Tooltip, Radio, message } from "antd";
 
 /* Styling tools */
 import { useTranslation } from "react-i18next";
@@ -20,12 +20,147 @@ import {
 /* Utils */
 import { generateCode } from "../../utils";
 
+// Helper function to extract just the code from a value (exported for use in createRunDorisAndProceed)
+// Handles both formats: "code" and "code - description" and "code (time)"
+export const extractCodeFromValue = (value) => {
+  if (!value || value === "") return "";
+  // First split by comma to handle multiple codes
+  return value.split(",").map(item => {
+    // Remove time interval if present: "code (time)" -> "code"
+    let codePart = item.split(" (")[0].trim();
+    // Remove description if present: "code - description" -> "code"
+    codePart = codePart.split(" - ")[0].trim();
+    return codePart;
+  }).join(",");
+};
+
+// Export the runDorisAndProceed function for use in Form component
+export const createRunDorisAndProceed = (currentEvent, causeOfDeaths, formMapping, icd11Options, attributes, currentTeiAgeAttributeValue, mutateDataValue, setUnderlyingResult, detectUnderlyingCauseOfDeath) => {
+  // Check if age is 0-6 days (neonatal deaths)
+  const checkIfNeonatalAge = () => {
+    if (!currentTeiAgeAttributeValue) return false;
+    
+    const ageUnit = attributes[formMapping.attributes["age_unit"]];
+    const ageValue = attributes[formMapping.attributes["estimated_age"]];
+    
+    if (!ageUnit || !ageValue) return false;
+    
+    if (ageUnit.toLowerCase().includes("day")) {
+      const ageInDays = parseInt(ageValue);
+      return ageInDays >= 0 && ageInDays <= 6;
+    }
+    
+    return false;
+  };
+
+  // Check if DORIS was successful
+  const isDorisSuccessful = () => {
+    const underlyingCode = currentEvent?.dataValues[formMapping.dataElements["underlyingCOD_code"]];
+    return underlyingCode && underlyingCode !== "";
+  };
+
+  // Auto-populate manual from codA
+  const populateManualFromCodA = () => {
+    const immediateCause = causeOfDeaths[formMapping.dataElements["codA"]].code;
+    
+    if (!immediateCause || immediateCause === "") {
+      message.error("No immediate cause of death (codA) found. Please enter cause of death A.");
+      return false;
+    }
+
+    const immediateCode = extractCodeFromValue(immediateCause);
+
+    // Set processing method to Manual
+    mutateDataValue(currentEvent?.event, formMapping.dataElements["underlyingCOD_processed_by"], "Manual");
+    
+    // Set reason for manual selection
+    mutateDataValue(currentEvent?.event, formMapping.dataElements["reason_of_manual_COD_selection"], "DORIS failed - using immediate cause of death (codA)");
+    
+    // Use immediate cause as underlying cause
+    mutateDataValue(currentEvent?.event, formMapping.dataElements["underlyingCOD"], immediateCode);
+    mutateDataValue(currentEvent?.event, formMapping.dataElements["underlyingCOD_code"], immediateCode);
+    
+    // Get chapter and group from icd11Options
+    const option = icd11Options.find(opt => opt.code === immediateCode);
+    if (option) {
+      const chapterValue = option.attributeValues.find(
+        attrVal => attrVal.attribute.id === formMapping.optionAttributes["chapter"]
+      )?.value || "";
+      
+      const groupValue = option.attributeValues.find(
+        attrVal => attrVal.attribute.id === formMapping.optionAttributes["group"]
+      )?.value || "";
+      
+      mutateDataValue(currentEvent?.event, formMapping.dataElements["underlyingCOD_chapter"], chapterValue);
+      mutateDataValue(currentEvent?.event, formMapping.dataElements["underlyingCOD_group"], groupValue);
+    }
+    
+    // Set codA as underlying, clear others
+    mutateDataValue(currentEvent?.event, formMapping.dataElements["codA_underlying"], true);
+    mutateDataValue(currentEvent?.event, formMapping.dataElements["codB_underlying"], false);
+    mutateDataValue(currentEvent?.event, formMapping.dataElements["codC_underlying"], false);
+    mutateDataValue(currentEvent?.event, formMapping.dataElements["codD_underlying"], false);
+    mutateDataValue(currentEvent?.event, formMapping.dataElements["codO_underlying"], false);
+    
+    // Update local state
+    setUnderlyingResult(immediateCode);
+    
+    return true;
+  };
+
+  // Main DORIS integration function
+  return async (proceedFunction) => {
+    // Check if age is 0-6 days
+    if (checkIfNeonatalAge()) {
+      message.warning("Manual cause of death recommended for ages 0-6 days. DORIS tool will not work for neonatal deaths. Please select manual processing.");
+      return;
+    }
+
+    // Check if DORIS already succeeded
+    if (isDorisSuccessful()) {
+      proceedFunction();
+      return;
+    }
+
+    // Check if manual already selected
+    const processedBy = currentEvent?.dataValues[formMapping.dataElements["underlyingCOD_processed_by"]];
+    if (processedBy === "Manual") {
+      // Auto-populate from codA and proceed
+      if (populateManualFromCodA()) {
+        message.info("Manual processing detected. Populated underlying cause from immediate cause of death (codA).");
+        proceedFunction();
+      }
+      return;
+    }
+
+    // Run DORIS tool
+    try {
+      await detectUnderlyingCauseOfDeath();
+      
+      // Check if DORIS succeeded
+      setTimeout(() => {
+        if (isDorisSuccessful()) {
+          message.success("DORIS tool completed successfully.");
+          proceedFunction();
+        } else {
+          message.error("DORIS tool failed. Manual capture is required. Please select manual processing and provide a reason.");
+        }
+      }, 1000); // Small delay to allow state updates
+      
+    } catch (error) {
+      console.error("DORIS Error:", error);
+      message.error("DORIS tool failed. Manual capture is required. Please select manual processing and provide a reason.");
+    }
+  };
+};
+
 const Stage = ({
   metadata,
   data,
   mutateEvent,
   mutateDataValue,
   initNewEvent,
+  runDorisAndProceed,
 }) => {
   const { t } = useTranslation();
 
@@ -64,8 +199,15 @@ const Stage = ({
     if (!codeValue || codeValue === "") return "";
     
     return codeValue.split(",").map(code => {
-      const codePart = code.split(" (")[0];
-      // Find the option in icd11Options to get the proper text
+      // Check if already has description in format "code - description"
+      if (code.includes(" - ")) {
+        // Extract description part (before time interval if present)
+        const beforeTime = code.split(" (")[0];
+        const parts = beforeTime.split(" - ");
+        return parts.length > 1 ? parts.slice(1).join(" - ") : parts[0];
+      }
+      // Otherwise, extract code and find description from icd11Options
+      const codePart = extractCodeFromValue(code);
       const option = icd11Options.find(opt => opt.code === codePart);
       return option ? option.name : codePart;
     }).join(", ");
@@ -79,6 +221,50 @@ const Stage = ({
       return currentEvent.dataValues[freeTextFieldId];
     }
     return "";
+  };
+
+  // Use the exported extractCodeFromValue function
+  // (defined at module level for use in createRunDorisAndProceed)
+
+  // Helper function to get description from icd11Options
+  const getDescriptionFromCode = (code) => {
+    if (!code || code === "") return "";
+    const option = icd11Options.find(opt => opt.code === code);
+    return option ? option.name : "";
+  };
+
+  // Helper function to format code with description: "code - description"
+  const formatCodeWithDescription = (code, description) => {
+    if (!code || code === "") return "";
+    if (!description || description === "") return code;
+    return `${code} - ${description}`;
+  };
+
+  // Helper function to enrich a value with descriptions if it's code-only
+  // Handles both single codes and comma-separated codes
+  const enrichValueWithDescription = (value) => {
+    if (!value || value === "") return "";
+    
+    return value.split(",").map(item => {
+      const trimmedItem = item.trim();
+      // Check if already has description (contains " - ")
+      if (trimmedItem.includes(" - ")) {
+        return trimmedItem;
+      }
+      // Extract code (might have time interval: "code (time)")
+      const codePart = trimmedItem.split(" (")[0].trim();
+      const description = getDescriptionFromCode(codePart);
+      if (description) {
+        // If there's a time interval, preserve it
+        const timeMatch = trimmedItem.match(/\(([^)]+)\)/);
+        if (timeMatch) {
+          return `${codePart} - ${description} (${timeMatch[1]})`;
+        }
+        return formatCodeWithDescription(codePart, description);
+      }
+      // If no description found, return as is
+      return trimmedItem;
+    }).join(",");
   };
 
   const {
@@ -255,9 +441,23 @@ const Stage = ({
     setUnderlyingResult(
       returnInitValue(formMapping.dataElements["underlyingCOD"])
     );
+    
+    // Helper to get and enrich code value
+    const getEnrichedCodeValue = (deId) => {
+      const rawValue = returnInitValue(deId);
+      if (!rawValue || rawValue === "") return "";
+      // Enrich code-only values with descriptions
+      const enriched = enrichValueWithDescription(rawValue);
+      // If value was enriched, update it in the database
+      if (enriched !== rawValue && currentEvent) {
+        mutateDataValue(currentEvent?.event, deId, enriched);
+      }
+      return enriched;
+    };
+    
     const cods = {
       [formMapping.dataElements["codA"]]: {
-        code: returnInitValue(formMapping.dataElements["codA"]),
+        code: getEnrichedCodeValue(formMapping.dataElements["codA"]),
         // label: returnInitValue(formMapping.dataElements["codA_name"]),
         underlying: returnInitValue(
           formMapping.dataElements["codA_underlying"]
@@ -265,7 +465,7 @@ const Stage = ({
         entityId: returnInitValue(formMapping.dataElements["codA_entityId"]),
       },
       [formMapping.dataElements["codB"]]: {
-        code: returnInitValue(formMapping.dataElements["codB"]),
+        code: getEnrichedCodeValue(formMapping.dataElements["codB"]),
         // label: returnInitValue(formMapping.dataElements["codB_name"]),
         underlying: returnInitValue(
           formMapping.dataElements["codB_underlying"]
@@ -273,7 +473,7 @@ const Stage = ({
         entityId: returnInitValue(formMapping.dataElements["codB_entityId"]),
       },
       [formMapping.dataElements["codC"]]: {
-        code: returnInitValue(formMapping.dataElements["codC"]),
+        code: getEnrichedCodeValue(formMapping.dataElements["codC"]),
         // label: returnInitValue(formMapping.dataElements["codC_name"]),
         underlying: returnInitValue(
           formMapping.dataElements["codC_underlying"]
@@ -281,7 +481,7 @@ const Stage = ({
         entityId: returnInitValue(formMapping.dataElements["codC_entityId"]),
       },
       [formMapping.dataElements["codD"]]: {
-        code: returnInitValue(formMapping.dataElements["codD"]),
+        code: getEnrichedCodeValue(formMapping.dataElements["codD"]),
         // label: returnInitValue(formMapping.dataElements["codD_name"]),
         underlying: returnInitValue(
           formMapping.dataElements["codD_underlying"]
@@ -289,7 +489,7 @@ const Stage = ({
         entityId: returnInitValue(formMapping.dataElements["codD_entityId"]),
       },
       [formMapping.dataElements["codO"]]: {
-        code: returnInitValue(formMapping.dataElements["codO"]),
+        code: getEnrichedCodeValue(formMapping.dataElements["codO"]),
         // label: returnInitValue(formMapping.dataElements["codO_name"]),
         underlying: returnInitValue(
           formMapping.dataElements["codO_underlying"]
@@ -608,22 +808,21 @@ const Stage = ({
 
                 // set underlying
                 if (value) {
-                  if (currentCauseOfDeath[id].code.split(",").length === 1) {
-                    setUnderlyingResult(
-                      currentCauseOfDeath[id].code.split(" (")[0]
-                    );
+                  const codeValue = currentCauseOfDeath[id].code;
+                  if (codeValue.split(",").length === 1) {
+                    setUnderlyingResult(extractCodeFromValue(codeValue));
                   } else {
                     setUnderlyingSelections(
-                      currentCauseOfDeath[id].code
+                      codeValue
                         .split(",")
-                        .map((selection) => ({
-                          label: `${selection} - ${
-                            icd11Options.find(
-                              ({ code }) => code === selection.split(" (")[0]
-                            )?.name
-                          }`,
-                          value: selection.split(" (")[0],
-                        }))
+                        .map((selection) => {
+                          const code = extractCodeFromValue(selection);
+                          const option = icd11Options.find(({ code: optCode }) => optCode === code);
+                          return {
+                            label: option ? `${code} - ${option.name}` : code,
+                            value: code,
+                          };
+                        })
                     );
                     setUnderlyingModal(true);
                   }
@@ -720,11 +919,19 @@ const Stage = ({
 
   const tagRender = (props) => {
     const { label, value, closable, onClose } = props;
-    const option = icd11Options.find(
-      (item) => item.code === value.split(" (")[0]
-    );
-
-    const displayText = `${value.split(" (")[0]} - ${option?.name}`;
+    // Extract code from value (handles "code", "code - description", "code (time)", "code - description (time)")
+    const code = extractCodeFromValue(value);
+    // Check if value already has description
+    let displayText;
+    if (value.includes(" - ")) {
+      // Already has description, use it
+      const parts = value.split(" (");
+      displayText = parts[0]; // "code - description"
+    } else {
+      // No description, try to get from icd11Options
+      const option = icd11Options.find((item) => item.code === code);
+      displayText = option ? `${code} - ${option.name}` : code;
+    }
 
     return (
       <span
@@ -877,8 +1084,9 @@ const Stage = ({
           const textFieldId = textFieldMapping[codCode];
           
           if (textFieldId && value.length > 0) {
-            const textValue = value.map(code => {
-              const codePart = code.split(" (")[0];
+            const textValue = value.map(codeValue => {
+              // Extract code from value
+              const codePart = extractCodeFromValue(codeValue);
               // Find the option in icd11Options to get the proper text
               const option = icd11Options.find(opt => opt.code === codePart);
               return option ? option.name : codePart;
@@ -935,6 +1143,7 @@ const Stage = ({
     );
   };
 
+
   const detectUnderlyingCauseOfDeath = async () => {
     let headers = new Headers();
     headers.append("accept", "application/json");
@@ -961,37 +1170,22 @@ const Stage = ({
         : "") +
       (currentTeiDateOfDeath ? `&dateDeath=${currentTeiDateOfDeath}` : "") +
       ("&causeOfDeathCodeA=" +
-        causeOfDeaths[formMapping.dataElements["codA"]].code
-          .split(",")
-          .map((c) => c.split(" (")[0])
-          .join(",")) +
+        extractCodeFromValue(causeOfDeaths[formMapping.dataElements["codA"]].code)) +
       (causeOfDeaths[formMapping.dataElements["codB"]].code !== ""
         ? "&causeOfDeathCodeB=" +
-          causeOfDeaths[formMapping.dataElements["codB"]].code
-            .split(",")
-            .map((c) => c.split(" (")[0])
-            .join(",")
+          extractCodeFromValue(causeOfDeaths[formMapping.dataElements["codB"]].code)
         : "") +
       (causeOfDeaths[formMapping.dataElements["codC"]].code !== ""
         ? "&causeOfDeathCodeC=" +
-          causeOfDeaths[formMapping.dataElements["codC"]].code
-            .split(",")
-            .map((c) => c.split(" (")[0])
-            .join(",")
+          extractCodeFromValue(causeOfDeaths[formMapping.dataElements["codC"]].code)
         : "") +
       (causeOfDeaths[formMapping.dataElements["codD"]].code !== ""
         ? "&causeOfDeathCodeD=" +
-          causeOfDeaths[formMapping.dataElements["codD"]].code
-            .split(",")
-            .map((c) => c.split(" (")[0])
-            .join(",")
+          extractCodeFromValue(causeOfDeaths[formMapping.dataElements["codD"]].code)
         : "") +
       (causeOfDeaths[formMapping.dataElements["codO"]].code !== ""
         ? "&causeOfDeathCodeE=" +
-          causeOfDeaths[formMapping.dataElements["codO"]].code
-            .split(",")
-            .map((c) => c.split(" (")[0])
-            .join(",")
+          extractCodeFromValue(causeOfDeaths[formMapping.dataElements["codO"]].code)
         : "") +
       ("&intervalA=" +
         causeOfDeaths[formMapping.dataElements["codA"]].code
@@ -1192,35 +1386,35 @@ const Stage = ({
         [formMapping.dataElements["codA"]]: {
           ...causeOfDeaths[formMapping.dataElements["codA"]],
           underlying:
-            causeOfDeaths[formMapping.dataElements["codA"]].code.includes(
+            extractCodeFromValue(causeOfDeaths[formMapping.dataElements["codA"]].code).includes(
               underlyingCode
             ),
         },
         [formMapping.dataElements["codB"]]: {
           ...causeOfDeaths[formMapping.dataElements["codB"]],
           underlying:
-            causeOfDeaths[formMapping.dataElements["codB"]].code.includes(
+            extractCodeFromValue(causeOfDeaths[formMapping.dataElements["codB"]].code).includes(
               underlyingCode
             ),
         },
         [formMapping.dataElements["codC"]]: {
           ...causeOfDeaths[formMapping.dataElements["codC"]],
           underlying:
-            causeOfDeaths[formMapping.dataElements["codC"]].code.includes(
+            extractCodeFromValue(causeOfDeaths[formMapping.dataElements["codC"]].code).includes(
               underlyingCode
             ),
         },
         [formMapping.dataElements["codD"]]: {
           ...causeOfDeaths[formMapping.dataElements["codD"]],
           underlying:
-            causeOfDeaths[formMapping.dataElements["codD"]].code.includes(
+            extractCodeFromValue(causeOfDeaths[formMapping.dataElements["codD"]].code).includes(
               underlyingCode
             ),
         },
         [formMapping.dataElements["codO"]]: {
           ...causeOfDeaths[formMapping.dataElements["codO"]],
           underlying:
-            causeOfDeaths[formMapping.dataElements["codO"]].code.includes(
+            extractCodeFromValue(causeOfDeaths[formMapping.dataElements["codO"]].code).includes(
               underlyingCode
             ),
         },
@@ -1348,21 +1542,55 @@ const Stage = ({
           <Button
             type="primary"
             onClick={() => {
+              // Get the current value to preserve descriptions
+              const currentValue = currentEvent?.dataValues[timeToDeath.causeId] || "";
+              const currentCodes = currentValue ? currentValue.split(",") : [];
+              
+              // Build the new value with code - description (time) format
+              const newValue = timeToDeath.timeInterval.reduce((accumulator, currentValue) => {
+                // Find the original entry for this code to preserve description
+                const originalEntry = currentCodes.find(entry => {
+                  const entryCode = extractCodeFromValue(entry);
+                  return entryCode === currentValue.code;
+                });
+                
+                // Get the code-description part (without time)
+                let codeWithDesc = currentValue.code;
+                if (originalEntry) {
+                  // Extract the part before time interval
+                  const beforeTime = originalEntry.split(" (")[0];
+                  if (beforeTime.includes(" - ")) {
+                    codeWithDesc = beforeTime; // Already has "code - description"
+                  } else {
+                    // Get description from icd11Options
+                    const description = getDescriptionFromCode(currentValue.code);
+                    if (description) {
+                      codeWithDesc = formatCodeWithDescription(currentValue.code, description);
+                    }
+                  }
+                } else {
+                  // No original entry, try to get description from icd11Options
+                  const description = getDescriptionFromCode(currentValue.code);
+                  if (description) {
+                    codeWithDesc = formatCodeWithDescription(currentValue.code, description);
+                  }
+                }
+                
+                const formatted = currentValue.time 
+                  ? `${codeWithDesc} (${currentValue.time})`
+                  : codeWithDesc;
+                
+                return accumulator === ""
+                  ? formatted
+                  : `${accumulator},${formatted}`;
+              }, "");
+              
               mutateDataValue(
                 currentEvent?.event,
                 timeToDeath.causeId,
-                timeToDeath.timeInterval.reduce((accumulator, currentValue) => {
-                  return accumulator === ""
-                    ? `${currentValue.code} (${currentValue.time})`
-                    : `${accumulator},${currentValue.code} (${currentValue.time})`;
-                }, "")
+                newValue
               );
-              causeOfDeaths[timeToDeath.causeId].code =
-                timeToDeath.timeInterval.reduce((accumulator, currentValue) => {
-                  return accumulator === ""
-                    ? `${currentValue.code} (${currentValue.time})`
-                    : `${accumulator},${currentValue.code} (${currentValue.time})`;
-                }, "");
+              causeOfDeaths[timeToDeath.causeId].code = newValue;
               setCauseOfDeaths({ ...causeOfDeaths });
               setTimeToDeathModal(false);
             }}
@@ -1565,18 +1793,27 @@ const Stage = ({
         onSelect={(cod) => {
           const selectedCod = {
             code: cod.code,
-            // label: cod.title
-            //   .replace(/<em class='found'>/g, "")
-            //   .replace(/<em class='nonwbe'>/g, "")
-            //   .replace(/<[/]em>/g, ""),
+            // Clean HTML tags from title to get description
+            description: cod.title
+              ? cod.title
+                  .replace(/<em class='found'>/g, "")
+                  .replace(/<em class='nonwbe'>/g, "")
+                  .replace(/<[/]em>/g, "")
+                  .trim()
+              : getDescriptionFromCode(cod.code),
             uri: cod.foundationUri,
           };
+          
+          // Format as "code - description"
+          const formattedValue = formatCodeWithDescription(
+            selectedCod.code,
+            selectedCod.description
+          );
+          
           causeOfDeaths[activeCauseOfDeath.code].code =
             causeOfDeaths[activeCauseOfDeath.code].code === ""
-              ? selectedCod.code
-              : `${causeOfDeaths[activeCauseOfDeath.code].code},${
-                  selectedCod.code
-                }`;
+              ? formattedValue
+              : `${causeOfDeaths[activeCauseOfDeath.code].code},${formattedValue}`;
           // causeOfDeaths[activeCauseOfDeath.code].label = selectedCod.label;
           causeOfDeaths[formMapping.dataElements["codA"]].underlying = false;
           causeOfDeaths[formMapping.dataElements["codB"]].underlying = false;
@@ -1739,11 +1976,14 @@ const Stage = ({
                                     ]
                                       .split(",")
                                       .map((codeSelection) => {
+                                        // Extract code (handles "code", "code - description", "code (time)", "code - description (time)")
+                                        const code = extractCodeFromValue(codeSelection);
+                                        // Extract time interval if present
+                                        const timeMatch = codeSelection.match(/\(([^)]+)\)/);
+                                        const time = timeMatch ? timeMatch[1] : undefined;
                                         return {
-                                          code: codeSelection.split(" (")[0],
-                                          time: codeSelection
-                                            .split(" (")[1]
-                                            ?.replace(")", ""),
+                                          code: code,
+                                          time: time,
                                         };
                                       }),
                                   });
@@ -1825,11 +2065,14 @@ const Stage = ({
                                     ]
                                       .split(",")
                                       .map((codeSelection) => {
+                                        // Extract code (handles "code", "code - description", "code (time)", "code - description (time)")
+                                        const code = extractCodeFromValue(codeSelection);
+                                        // Extract time interval if present
+                                        const timeMatch = codeSelection.match(/\(([^)]+)\)/);
+                                        const time = timeMatch ? timeMatch[1] : undefined;
                                         return {
-                                          code: codeSelection.split(" (")[0],
-                                          time: codeSelection
-                                            .split(" (")[1]
-                                            ?.replace(")", ""),
+                                          code: code,
+                                          time: time,
                                         };
                                       }),
                                   });
@@ -1911,11 +2154,14 @@ const Stage = ({
                                     ]
                                       .split(",")
                                       .map((codeSelection) => {
+                                        // Extract code (handles "code", "code - description", "code (time)", "code - description (time)")
+                                        const code = extractCodeFromValue(codeSelection);
+                                        // Extract time interval if present
+                                        const timeMatch = codeSelection.match(/\(([^)]+)\)/);
+                                        const time = timeMatch ? timeMatch[1] : undefined;
                                         return {
-                                          code: codeSelection.split(" (")[0],
-                                          time: codeSelection
-                                            .split(" (")[1]
-                                            ?.replace(")", ""),
+                                          code: code,
+                                          time: time,
                                         };
                                       }),
                                   });
@@ -1996,11 +2242,14 @@ const Stage = ({
                                     ]
                                       .split(",")
                                       .map((codeSelection) => {
+                                        // Extract code (handles "code", "code - description", "code (time)", "code - description (time)")
+                                        const code = extractCodeFromValue(codeSelection);
+                                        // Extract time interval if present
+                                        const timeMatch = codeSelection.match(/\(([^)]+)\)/);
+                                        const time = timeMatch ? timeMatch[1] : undefined;
                                         return {
-                                          code: codeSelection.split(" (")[0],
-                                          time: codeSelection
-                                            .split(" (")[1]
-                                            ?.replace(")", ""),
+                                          code: code,
+                                          time: time,
                                         };
                                       }),
                                   });
@@ -2603,12 +2852,17 @@ const Stage = ({
                                       formMapping.dataElements["codA"]
                                     ]
                                       .split(",")
-                                      .map((codeSelection) => ({
-                                        code: codeSelection.split(" (")[0],
-                                        time: codeSelection
-                                          .split(" (")[1]
-                                          ?.replace(")", ""),
-                                      })),
+                                      .map((codeSelection) => {
+                                        // Extract code (handles "code", "code - description", "code (time)", "code - description (time)")
+                                        const code = extractCodeFromValue(codeSelection);
+                                        // Extract time interval if present
+                                        const timeMatch = codeSelection.match(/\(([^)]+)\)/);
+                                        const time = timeMatch ? timeMatch[1] : undefined;
+                                        return {
+                                          code: code,
+                                          time: time,
+                                        };
+                                      }),
                                   });
                                 }}
                               >
@@ -3010,16 +3264,18 @@ const Stage = ({
                             )}
                           </td>
                         </tr>
-                        <tr>
-                          <td>{t("occurrenceSpecifyPlace")}</td>
-                          <td>
-                            {renderInputField(
-                              formMapping.dataElements[
-                                "externalCause_specifiedPlace"
-                              ]
-                            )}
-                          </td>
-                        </tr>
+                        {(['OTHER_CAUSE', 'BURN'].includes(currentEvent?.dataValues[formMapping.dataElements["externalCause_place"]])) && (
+                          <tr>
+                            <td>{t("occurrenceSpecifyPlace")}</td>
+                            <td>
+                              {renderInputField(
+                                formMapping.dataElements[
+                                  "externalCause_specifiedPlace"
+                                ]
+                              )}
+                            </td>
+                          </tr>
+                        )}
                       </>
                     )}
                 </tbody>

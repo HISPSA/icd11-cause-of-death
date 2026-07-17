@@ -1306,7 +1306,7 @@ const TRANSLATIONS = [
     key: "occurrencePlace",
     translation: {
       ar: "مكان حدوث السبب الخارجي",
-      en: "Place of occurrence of the external cause",
+      en: "External cause of death",
       fr: "Lieu de survenance de la cause externe"
     }
   },
@@ -1314,7 +1314,7 @@ const TRANSLATIONS = [
     key: "occurrenceSpecifyPlace",
     translation: {
       ar: "حدد مكان حدوث السبب الخارجي",
-      en: "Specify place of occurence of the external cause",
+      en: "Please specify external cause of death",
       fr: "Préciser le lieu d'apparition de la cause externe"
     }
   },

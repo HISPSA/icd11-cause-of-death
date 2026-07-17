@@ -647,14 +647,14 @@ const resources = {
     {
       key: "occurrencePlace",
       translation: {
-        en: "Place of occurrence of the external cause",
+        en: "External cause of death",
         fr: "Lieu de survenance de la cause externe",
       },
     },
     {
       key: "occurrenceSpecifyPlace",
       translation: {
-        en: "Specify place of occurence of the external cause",
+        en: "Specify external cause of death",
         fr: "Préciser le lieu d'apparition de la cause externe",
       },
     },
