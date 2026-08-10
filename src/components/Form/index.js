@@ -197,18 +197,13 @@ const Form = ({
           setDeleteWarning(false);
         }}
         handleDeleteEnrollment={async () => {
-          await dataApi.push(
-            `/api/enrollments/${currentEnrollment.enrollment}`,
-            {},
-            "DELETE"
-          );
+          await dataApi.deleteEnrollment(currentEnrollment.enrollment);
           changeRoute("list");
         }}
         handleDeleteTEI={async () => {
-          await dataApi.push(
-            `/api/trackedEntityInstances/${currentEnrollment.trackedEntityInstance}`,
-            {},
-            "DELETE"
+          await dataApi.deleteTei(
+            currentEnrollment.trackedEntity ||
+              currentEnrollment.trackedEntityInstance
           );
           changeRoute("list");
         }}
