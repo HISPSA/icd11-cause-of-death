@@ -134,6 +134,8 @@ There is no separate `TrackerApiClass` — an earlier partial attempt by that na
 
 **After migrating, smoke-test:** the registered list (load, paginate, sort, filter), search by program and by tracked entity type, opening a record, and create / save / complete / reopen / delete.
 
+See [SMOKE_TEST.md](SMOKE_TEST.md) for the full checklist, with the failure mode to watch for on each step. The delete paths and the list pager do the most shape translation and are worth doing first.
+
 ## Recommended long-term fix
 
 Upgrade `react-scripts` to v5 (or migrate off CRA, e.g. to Vite). This resolves issues #1–#3 at once and removes the need for the `--openssl-legacy-provider` flag.
