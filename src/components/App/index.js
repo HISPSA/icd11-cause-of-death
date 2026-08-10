@@ -52,6 +52,14 @@ import localeFile from "../../locale/locale";
 const { useApi } = Hooks;
 const { LoadingMask } = Components;
 
+/**
+ * The DHIS2 Global Shell (new in 2.42) loads apps in an iframe and renders its
+ * own header bar. It only hides the app's header automatically for App Platform
+ * apps -- this is a CRA app, so we hide ours when embedded, otherwise two
+ * identical header bars stack. Standalone (dev server, direct app URL) keeps it.
+ */
+const inGlobalShell = window.self !== window.top;
+
 const App = ({
   route,
   setProgramMetadata,
@@ -333,13 +341,15 @@ const App = ({
 
   return (
     <div className="App">
-      <div className="header-bar-container">
-        <HeaderBarContainer />
-      </div>
+      {!inGlobalShell && (
+        <div className="header-bar-container">
+          <HeaderBarContainer />
+        </div>
+      )}
       {loading ? (
         <LoadingMask />
       ) : (
-        <div className="app-content">
+        <div className={inGlobalShell ? "app-content app-content-full" : "app-content"}>
           {!loading && <ControlBar />}
           {route === "list" && <RegisteredTeiList />}
           {route === "search" && <SearchForm />}

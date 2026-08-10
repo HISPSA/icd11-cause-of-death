@@ -12,6 +12,11 @@
   height: calc(100% - 48px);
 }
 
+/* No app header bar (DHIS2 Global Shell provides it) -- reclaim its 48px. */
+.app-content-full {
+  height: 100%;
+}
+
 
 
 .stage-section-subtitle{
