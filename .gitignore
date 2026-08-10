@@ -15,6 +15,14 @@ dist-ssr
 *.local
 yarn.lock
 
+# Key material -- never commit. Deploy keys belong in the CI/CD secret store,
+# not the repo. See mc_makga_ssh in commit 3ad8a1e for why this is here.
+mc_makga_ssh
+mc_makga_ssh.pub
+*.pem
+id_rsa
+id_ed25519
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
