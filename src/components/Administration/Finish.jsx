@@ -405,7 +405,8 @@ const Finish = ({
                                 view: false
                               };
                             results[3].userGroups.forEach( userGroup => {
-                            const role = results[2].userGroupAccesses.find( ({id}) => id === userGroup.id );
+                            const role = results[2].userGroupAccesses?.find( ({id}) => id === userGroup.id )
+                              ?? results[2].sharing?.userGroups?.[userGroup.id];
                             if ( role ) {
                                 if ( role.access.charAt(1) === 'w' ) {
                                 roles = {
