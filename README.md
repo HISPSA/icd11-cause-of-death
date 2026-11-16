@@ -64,6 +64,18 @@ REACT_APP_ICD11_API_URL_PRODUCTION=../../../../services/icd11
 > [!IMPORTANT]
 > The `.env` file is **required** even for a production build. `REACT_APP_BASE_URL` is baked into the bundle at build time and is used by the header bar (via `@dhis2/app-runtime`). If it is missing, the value becomes `undefined`, API calls resolve relative to the installed app path, and requests such as `systemSettings/applicationTitle` 404 (e.g. `.../api/apps/ICD-11-Cause-of-Death/api/systemSettings/applicationTitle`). Use `../../..` for production — it resolves to the DHIS2 instance root from the app path and is portable across instances. A full absolute URL (e.g. `https://your-instance/za-eidsr`) also works but ties the build to one server.
 
+> [!WARNING]
+> `.env` is gitignored, so the copy on a developer's machine is usually the **Run locally** one, with an absolute `REACT_APP_BASE_URL`. A plain `yarn build` from that checkout bakes that server into the zip. The core reads `REACT_APP_BASE_URL` for its API client (`useApi.js`), the header bar and both org unit selectors, so the app then reads and writes **that** server wherever it is installed — e.g. a build installed on training talks to production. See troubleshooting #8.
+>
+> To build a portable zip without editing `.env`, override the variable for the one command (a shell variable takes precedence over `.env`):
+> ```
+> REACT_APP_BASE_URL=../../.. yarn build
+> ```
+> Then confirm no absolute DHIS2 URL was baked in — this should print nothing (adjust the domain to your servers):
+> ```
+> grep -o "https://[a-z0-9.-]*dhmis.org" build/static/js/main.*.js
+> ```
+
 ---
 
 # Troubleshooting & Fixes
@@ -104,6 +116,9 @@ Caused by a missing `.env` → `REACT_APP_BASE_URL` undefined → relative URL r
 
 ### 7. `manifest.webapp` base URL
 `activities.dhis.href` must be `"*"`. DHIS2 replaces `*` with the instance base URL **when the app is installed through App Management**. If you copy files into the apps folder manually, `*` is not replaced. Always install by uploading the built zip via **App Management → Upload**. (Note: this only affects code paths that read the manifest; the header bar uses `REACT_APP_BASE_URL`, see #6.)
+
+### 8. App installed on one instance reads/writes another
+A zip built while `.env` held an absolute `REACT_APP_BASE_URL` (typically the **Run locally** value) has that server baked in, and calls it no matter which instance the app is installed on — e.g. a build meant for `training.dhis.dhmis.org/za-eidsr` that still points at production `za-eidsr.dhis.dhmis.org`. Depending on that server's CORS settings this shows up as failed requests or, worse, as data landing on the wrong instance. Fix: rebuild with `REACT_APP_BASE_URL=../../.. yarn build`, check the bundle with the `grep` in *Build (for production)*, and reinstall.
 
 ## Tracker API migration (DHIS2 2.41 / 2.42)
 
