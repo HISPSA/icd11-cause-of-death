@@ -1,5 +1,5 @@
 // Utility to check for duplicate SA ID numbers in DHIS2
-const apiBaseUrl = "https://staging.dhis.dhmis.org/za-eidsr";
+const apiBaseUrl = "https://za-eidsr.dhis.dhmis.org";
 
 export const checkDuplicateSAIdNumber = async (idNumber, baseUrl = apiBaseUrl) => {
   const url = `${baseUrl}/api/41/tracker/trackedEntities?program=ogrOUKoSaWA&orgUnitMode=ACCESSIBLE&filter=iS1g0uT0Dsb:EQ:${idNumber}`;
